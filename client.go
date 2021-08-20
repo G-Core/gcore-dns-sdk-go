@@ -27,6 +27,7 @@ type Client struct {
 	HTTPClient *http.Client
 	BaseURL    *url.URL
 	authHeader func() string
+	Debug      bool
 }
 
 // ZonesFilter find zones
@@ -209,7 +210,7 @@ func (c *Client) DeleteRRSetRecord(ctx context.Context, zone, name, recordType s
 		return nil
 	}
 	// setup new records
-	newRecords := make([]ResourceRecords, 0, len(rrSet.Records))
+	newRecords := make([]ResourceRecord, 0, len(rrSet.Records))
 LOOP:
 	for _, record := range rrSet.Records {
 		if len(record.Content) == 0 {
@@ -239,12 +240,25 @@ LOOP:
 	return err
 }
 
+// AddZoneOpt setup RRSet
+type AddZoneOpt func(*RRSet)
+
+// WithFilters add filters to RRSet
+func WithFilters(filters ...RecordFilter) AddZoneOpt {
+	return func(set *RRSet) {
+		set.AddFilter(filters...)
+	}
+}
+
 // AddZoneRRSet create or extend resource record.
 func (c *Client) AddZoneRRSet(ctx context.Context,
 	zone, recordName, recordType string,
-	values []ResourceRecords, ttl int) error {
+	values []ResourceRecord, ttl int, opts ...AddZoneOpt) error {
 
 	record := RRSet{TTL: ttl, Records: values}
+	for _, op := range opts {
+		op(&record)
+	}
 
 	records, err := c.RRSet(ctx, zone, recordName, recordType)
 	if err == nil && len(records.Records) > 0 {
@@ -286,7 +300,9 @@ func (c *Client) do(ctx context.Context, method, uri string, bodyParams interfac
 		return fmt.Errorf("failed to parse endpoint: %w", err)
 	}
 
-	log.Printf("[DEBUG] dns api request: %s %s %s \n", method, uri, bs)
+	if c.Debug {
+		log.Printf("[DEBUG] dns api request: %s %s %s \n", method, uri, bs)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, method, endpoint.String(), strings.NewReader(string(bs)))
 	if err != nil {

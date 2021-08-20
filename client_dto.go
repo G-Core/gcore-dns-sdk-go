@@ -31,14 +31,59 @@ type CreateResponse struct {
 
 // RRSet dto as part of zone info from API
 type RRSet struct {
-	TTL     int               `json:"ttl"`
-	Records []ResourceRecords `json:"resource_records"`
+	TTL     int              `json:"ttl"`
+	Records []ResourceRecord `json:"resource_records"`
+	Filters []RecordFilter   `json:"filters"`
 }
 
-// ResourceRecords dto describe records in RRSet
-type ResourceRecords struct {
+// ResourceRecord dto describe records in RRSet
+type ResourceRecord struct {
 	Content []string               `json:"content"`
 	Meta    map[string]interface{} `json:"meta"`
+	Enabled bool                   `json:"enabled"`
+}
+
+// RecordFilter describe Filters in RRSet
+type RecordFilter struct {
+	Limit  uint   `json:"limit"`
+	Type   string `json:"type"`
+	Strict bool   `json:"strict"`
+}
+
+// NewGeoDNSFilter for RRSet
+func NewGeoDNSFilter(limit uint, strict bool) RecordFilter {
+	return RecordFilter{
+		Limit:  limit,
+		Type:   "geodns",
+		Strict: strict,
+	}
+}
+
+// NewGeoDistanceFilter for RRSet
+func NewGeoDistanceFilter(limit uint, strict bool) RecordFilter {
+	return RecordFilter{
+		Limit:  limit,
+		Type:   "geodistance",
+		Strict: strict,
+	}
+}
+
+// NewDefaultFilter for RRSet
+func NewDefaultFilter(limit uint, strict bool) RecordFilter {
+	return RecordFilter{
+		Limit:  limit,
+		Type:   "default",
+		Strict: strict,
+	}
+}
+
+// NewFirstNFilter for RRSet
+func NewFirstNFilter(limit uint, strict bool) RecordFilter {
+	return RecordFilter{
+		Limit:  limit,
+		Type:   "first_n",
+		Strict: strict,
+	}
 }
 
 // RecordType contract
@@ -86,6 +131,26 @@ func (caa RecordTypeCAA) ToContent() []string {
 	return content
 }
 
+// RecordTypeSRV as type of record
+type RecordTypeSRV string
+
+// ToContent convertor
+func (srv RecordTypeSRV) ToContent() []string {
+	parts := strings.Split(string(srv), " ")
+	content := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p == "" {
+			continue
+		}
+		content = append(content, p)
+	}
+	// nolint: gomnd
+	if len(content) != 4 {
+		return nil
+	}
+	return content
+}
+
 // RecordTypeAny as type of record
 type RecordTypeAny string
 
@@ -101,6 +166,8 @@ func ToRecordType(rType, content string) RecordType {
 		return RecordTypeMX(content)
 	case "caa":
 		return RecordTypeCAA(content)
+	case "srv":
+		return RecordTypeSRV(content)
 	}
 	return RecordTypeAny(content)
 }
@@ -114,7 +181,7 @@ func ContentFromValue(recordType, content string) []string {
 	return rt.ToContent()
 }
 
-// ResourceMeta for ResourceRecords
+// ResourceMeta for ResourceRecord
 type ResourceMeta struct {
 	name     string
 	value    interface{}
@@ -212,14 +279,14 @@ func NewResourceMetaDefault() ResourceMeta {
 	}
 }
 
-// SetContent to ResourceRecords
-func (r *ResourceRecords) SetContent(recordType, val string) *ResourceRecords {
+// SetContent to ResourceRecord
+func (r *ResourceRecord) SetContent(recordType, val string) *ResourceRecord {
 	r.Content = ContentFromValue(recordType, val)
 	return r
 }
 
-// AddMeta to ResourceRecords
-func (r *ResourceRecords) AddMeta(meta ResourceMeta) *ResourceRecords {
+// AddMeta to ResourceRecord
+func (r *ResourceRecord) AddMeta(meta ResourceMeta) *ResourceRecord {
 	if meta.validErr != nil {
 		return r
 	}
@@ -231,6 +298,15 @@ func (r *ResourceRecords) AddMeta(meta ResourceMeta) *ResourceRecords {
 	}
 	r.Meta[meta.name] = meta.value
 	return r
+}
+
+// AddFilter to RRSet
+func (rr *RRSet) AddFilter(filters ...RecordFilter) *RRSet {
+	if rr.Filters == nil {
+		rr.Filters = make([]RecordFilter, 0)
+	}
+	rr.Filters = append(rr.Filters, filters...)
+	return rr
 }
 
 // ZoneRecord dto describe records in Zone

@@ -429,7 +429,7 @@ func TestResourceRecords_AddMeta(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   ResourceRecords
+		want   ResourceRecord
 	}{
 		{
 			name: "",
@@ -442,14 +442,14 @@ func TestResourceRecords_AddMeta(t *testing.T) {
 					value: 1,
 				},
 			},
-			want: ResourceRecords{
+			want: ResourceRecord{
 				Meta: map[string]interface{}{"a": 1},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &ResourceRecords{
+			r := &ResourceRecord{
 				Content: tt.fields.Content,
 				Meta:    tt.fields.Meta,
 			}

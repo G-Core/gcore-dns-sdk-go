@@ -16,7 +16,9 @@ func TestNewClient(t *testing.T) {
 		t.Skip("no defined TESTS_API_PERMANENT_TOKEN")
 	}
 
-	sdk := NewClient(PermanentAPIKeyAuth(apiToken))
+	sdk := NewClient(PermanentAPIKeyAuth(apiToken), func(client *Client) {
+		client.Debug = true
+	})
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -49,12 +51,13 @@ func TestNewClient(t *testing.T) {
 		zoneName,
 		recName,
 		recType,
-		[]ResourceRecords{
-			*(&ResourceRecords{}).
+		[]ResourceRecord{
+			*(&ResourceRecord{}).
 				SetContent(recType, recVal).
 				AddMeta(NewResourceMetaLatLong("3.3,4.4")),
 		},
-		30)
+		30,
+		WithFilters(NewDefaultFilter(1, true)))
 	if err != nil {
 		t.Fatal("add rrSet", err)
 	}
@@ -68,16 +71,17 @@ func TestNewClient(t *testing.T) {
 		recType,
 		RRSet{
 			TTL: 60,
-			Records: []ResourceRecords{
-				*(&ResourceRecords{}).
+			Records: []ResourceRecord{
+				*(&ResourceRecord{Enabled: true}).
 					SetContent(recType, recVal).
 					AddMeta(NewResourceMetaLatLong("1.1,2.2")).
 					AddMeta(NewResourceMetaDefault()).
 					AddMeta(NewResourceMetaAsn(1)),
-				*(&ResourceRecords{}).
+				*(&ResourceRecord{}).
 					SetContent(recType, recVal2).
 					AddMeta(NewResourceMetaNotes("note")),
 			},
+			Filters: []RecordFilter{NewGeoDNSFilter(1, true)},
 		},
 	)
 	if err != nil {
@@ -141,7 +145,7 @@ func TestNewClient(t *testing.T) {
 	}
 	wantRrSet := RRSet{
 		TTL: 60,
-		Records: []ResourceRecords{
+		Records: []ResourceRecord{
 			{
 				Content: []string{recVal},
 				Meta: map[string]interface{}{
@@ -149,8 +153,10 @@ func TestNewClient(t *testing.T) {
 					"default": true,
 					"asn":     []interface{}{1},
 				},
+				Enabled: true,
 			},
 		},
+		Filters: []RecordFilter{NewGeoDNSFilter(1, true)},
 	}
 	if rrSet.TTL != wantRrSet.TTL {
 		t.Fatalf("read rrSet ttl: wrong res: got= %+v , want= %+v",
@@ -159,6 +165,10 @@ func TestNewClient(t *testing.T) {
 	if !reflect.DeepEqual(rrSet.Records[0].Content, wantRrSet.Records[0].Content) {
 		t.Fatalf("read rrSet content: wrong res: got= %+v , want= %+v",
 			rrSet.Records[0].Content, wantRrSet.Records[0].Content)
+	}
+	if !reflect.DeepEqual(rrSet.Filters, wantRrSet.Filters) {
+		t.Fatalf("read rrSet filters: wrong res: got= %+v , want= %+v",
+			rrSet.Filters, wantRrSet.Filters)
 	}
 	if fmt.Sprint(rrSet.Records[0].Meta["asn"]) != fmt.Sprint(wantRrSet.Records[0].Meta["asn"]) {
 		t.Fatalf("read rrSet meta asn: wrong res: got= %+v %T, want= %+v %T",
