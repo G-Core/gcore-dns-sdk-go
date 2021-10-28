@@ -43,7 +43,8 @@ type ResourceRecord struct {
 	Enabled bool                   `json:"enabled"`
 }
 
-func (r ResourceRecord) contentToString() string {
+// ContentToString as short value
+func (r ResourceRecord) ContentToString() string {
 	parts := make([]string, len(r.Content))
 	for i := range r.Content {
 		parts[i] = fmt.Sprint(r.Content[i])
