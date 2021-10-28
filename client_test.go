@@ -154,7 +154,7 @@ func TestClient_RRSet(t *testing.T) {
 		},
 		Records: []ResourceRecord{
 			{
-				Content: []string{testRecordContent},
+				Content: []interface{}{testRecordContent},
 				Meta:    map[string]interface{}{"notes": []interface{}{"note"}},
 				Enabled: false,
 			},
@@ -190,16 +190,16 @@ func TestClient_DeleteRRSetRecord_Remove(t *testing.T) {
 		TTL: 10,
 		Records: []ResourceRecord{
 			{
-				Content: []string{"1"},
+				Content: []interface{}{"1"},
 			},
 			{
-				Content: []string{"2"},
+				Content: []interface{}{"2"},
 			},
 			{
-				Content: []string{"3"},
+				Content: []interface{}{"3"},
 			},
 			{
-				Content: []string{"4"},
+				Content: []interface{}{"4"},
 			},
 		},
 	}
@@ -225,16 +225,16 @@ func TestClient_DeleteRRSetRecord_Update(t *testing.T) {
 		TTL: 10,
 		Records: []ResourceRecord{
 			{
-				Content: []string{"1"},
+				Content: []interface{}{"1"},
 			},
 			{
-				Content: []string{"2"},
+				Content: []interface{}{"2"},
 			},
 			{
-				Content: []string{"3"},
+				Content: []interface{}{"3"},
 			},
 			{
-				Content: []string{"4"},
+				Content: []interface{}{"4"},
 			},
 		},
 	}
@@ -246,10 +246,10 @@ func TestClient_DeleteRRSetRecord_Update(t *testing.T) {
 			case http.MethodPut:
 				handleRRSet([]ResourceRecord{
 					{
-						Content: []string{"1"},
+						Content: []interface{}{"1"},
 					},
 					{
-						Content: []string{"4"},
+						Content: []interface{}{"4"},
 					},
 				}).ServeHTTP(writer, request)
 			default:
@@ -306,7 +306,7 @@ func TestClient_AddRRSet(t *testing.T) {
 				// createRRSet
 				"/v2/zones/test.example.com/my.test.example.com/" + txtRecordType: validationHandler{
 					method: http.MethodPost,
-					next:   handleRRSet([]ResourceRecord{{Content: []string{testRecordContent}}}),
+					next:   handleRRSet([]ResourceRecord{{Content: []interface{}{testRecordContent}}}),
 				},
 			},
 		},
@@ -322,13 +322,13 @@ func TestClient_AddRRSet(t *testing.T) {
 						case http.MethodGet: // GetRRSet
 							data := RRSet{
 								TTL:     testTTL,
-								Records: []ResourceRecord{{Content: []string{testRecordContent2}}},
+								Records: []ResourceRecord{{Content: []interface{}{testRecordContent2}}},
 							}
 							handleJSONResponse(data).ServeHTTP(rw, req)
 						case http.MethodPut: // updateRRSet
 							expected := []ResourceRecord{
-								{Content: []string{testRecordContent}},
-								{Content: []string{testRecordContent2}},
+								{Content: []interface{}{testRecordContent}},
+								{Content: []interface{}{testRecordContent2}},
 							}
 							handleRRSet(expected).ServeHTTP(rw, req)
 						default:
@@ -355,7 +355,7 @@ func TestClient_AddRRSet(t *testing.T) {
 			}
 
 			err := cl.AddZoneRRSet(context.Background(),
-				test.zone, test.recordName, txtRecordType, []ResourceRecord{{Content: []string{test.value}}}, testTTL)
+				test.zone, test.recordName, txtRecordType, []ResourceRecord{{Content: []interface{}{test.value}}}, testTTL)
 			if test.wantErr {
 				require.Error(t, err)
 				return

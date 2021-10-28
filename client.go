@@ -217,7 +217,7 @@ LOOP:
 			continue
 		}
 		for _, toDelete := range contents {
-			if toDelete == strings.Join(record.Content, " ") {
+			if toDelete == record.contentToString() {
 				continue LOOP
 			}
 		}

@@ -47,6 +47,10 @@ func TestNewClient(t *testing.T) {
 	recName := "www." + zoneName
 	recType := "TXT"
 	recVal := "12345"
+
+	recTypeSecond := "MX"
+	recValSecond := "10 my.mail.server.com"
+
 	err = sdk.AddZoneRRSet(ctx,
 		zoneName,
 		recName,
@@ -55,6 +59,19 @@ func TestNewClient(t *testing.T) {
 			*(&ResourceRecord{}).
 				SetContent(recType, recVal).
 				AddMeta(NewResourceMetaLatLong("3.3,4.4")),
+		},
+		30,
+		WithFilters(NewDefaultFilter(1, true)))
+	if err != nil {
+		t.Fatal("add rrSet", err)
+	}
+
+	err = sdk.AddZoneRRSet(ctx,
+		zoneName,
+		recName,
+		recTypeSecond,
+		[]ResourceRecord{
+			*(&ResourceRecord{}).SetContent(recTypeSecond, recValSecond),
 		},
 		30,
 		WithFilters(NewDefaultFilter(1, true)))
@@ -147,7 +164,7 @@ func TestNewClient(t *testing.T) {
 		TTL: 60,
 		Records: []ResourceRecord{
 			{
-				Content: []string{recVal},
+				Content: []interface{}{recVal},
 				Meta: map[string]interface{}{
 					"latlong": []interface{}{1.1, 2.2},
 					"default": true,

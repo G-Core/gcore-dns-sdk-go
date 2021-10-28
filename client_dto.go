@@ -38,9 +38,17 @@ type RRSet struct {
 
 // ResourceRecord dto describe records in RRSet
 type ResourceRecord struct {
-	Content []string               `json:"content"`
+	Content []interface{}          `json:"content"`
 	Meta    map[string]interface{} `json:"meta"`
 	Enabled bool                   `json:"enabled"`
+}
+
+func (r ResourceRecord) contentToString() string {
+	parts := make([]string, len(r.Content))
+	for i := range r.Content {
+		parts[i] = fmt.Sprint(r.Content[i])
+	}
+	return strings.Join(parts, " ")
 }
 
 // RecordFilter describe Filters in RRSet
@@ -88,26 +96,25 @@ func NewFirstNFilter(limit uint, strict bool) RecordFilter {
 
 // RecordType contract
 type RecordType interface {
-	ToContent() []string
+	ToContent() []interface{}
 }
 
 // RecordTypeMX as type of record
 type RecordTypeMX string
 
 // ToContent convertor
-func (mx RecordTypeMX) ToContent() []string {
+func (mx RecordTypeMX) ToContent() []interface{} {
 	parts := strings.Split(string(mx), " ")
-	content := make([]string, 0, len(parts))
-	for _, p := range parts {
-		if p == "" {
-			continue
-		}
-		content = append(content, p)
-	}
 	// nolint: gomnd
-	if len(content) != 2 {
+	if len(parts) != 2 {
 		return nil
 	}
+	content := make([]interface{}, len(parts))
+	// nolint: gomnd
+	content[1] = parts[1]
+	// nolint: gomnd
+	content[0], _ = strconv.ParseInt(parts[0], 10, 64)
+
 	return content
 }
 
@@ -115,19 +122,20 @@ func (mx RecordTypeMX) ToContent() []string {
 type RecordTypeCAA string
 
 // ToContent convertor
-func (caa RecordTypeCAA) ToContent() []string {
+func (caa RecordTypeCAA) ToContent() []interface{} {
 	parts := strings.Split(string(caa), " ")
-	content := make([]string, 0, len(parts))
-	for _, p := range parts {
-		if p == "" {
-			continue
-		}
-		content = append(content, p)
-	}
 	// nolint: gomnd
-	if len(content) != 3 {
+	if len(parts) != 3 {
 		return nil
 	}
+	content := make([]interface{}, len(parts))
+	// nolint: gomnd
+	content[1] = parts[1]
+	// nolint: gomnd
+	content[2] = parts[2]
+	// nolint: gomnd
+	content[0], _ = strconv.ParseInt(parts[0], 10, 64)
+
 	return content
 }
 
@@ -135,19 +143,22 @@ func (caa RecordTypeCAA) ToContent() []string {
 type RecordTypeSRV string
 
 // ToContent convertor
-func (srv RecordTypeSRV) ToContent() []string {
+func (srv RecordTypeSRV) ToContent() []interface{} {
 	parts := strings.Split(string(srv), " ")
-	content := make([]string, 0, len(parts))
-	for _, p := range parts {
-		if p == "" {
-			continue
-		}
-		content = append(content, p)
-	}
 	// nolint: gomnd
-	if len(content) != 4 {
+	if len(parts) != 4 {
 		return nil
 	}
+	content := make([]interface{}, len(parts))
+	// nolint: gomnd
+	content[0], _ = strconv.ParseInt(parts[0], 10, 64)
+	// nolint: gomnd
+	content[1], _ = strconv.ParseInt(parts[1], 10, 64)
+	// nolint: gomnd
+	content[2], _ = strconv.ParseInt(parts[2], 10, 64)
+	// nolint: gomnd
+	content[3] = parts[3]
+
 	return content
 }
 
@@ -155,8 +166,8 @@ func (srv RecordTypeSRV) ToContent() []string {
 type RecordTypeAny string
 
 // ToContent convertor
-func (any RecordTypeAny) ToContent() []string {
-	return []string{string(any)}
+func (any RecordTypeAny) ToContent() []interface{} {
+	return []interface{}{string(any)}
 }
 
 // ToRecordType builder
@@ -173,7 +184,7 @@ func ToRecordType(rType, content string) RecordType {
 }
 
 // ContentFromValue convertor from flat value to valid for api
-func ContentFromValue(recordType, content string) []string {
+func ContentFromValue(recordType, content string) []interface{} {
 	rt := ToRecordType(recordType, content)
 	if rt == nil {
 		return nil

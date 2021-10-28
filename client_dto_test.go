@@ -11,12 +11,12 @@ func TestRecordTypeMX_ToContent(t *testing.T) {
 	tests := []struct {
 		name string
 		mx   RecordTypeMX
-		want []string
+		want []interface{}
 	}{
 		{
 			name: "ok",
 			mx:   "10 mail.server",
-			want: []string{"10", "mail.server"},
+			want: []interface{}{int64(10), "mail.server"},
 		},
 		{
 			name: "wrong",
@@ -37,12 +37,12 @@ func TestRecordTypeCAA_ToContent(t *testing.T) {
 	tests := []struct {
 		name string
 		caa  RecordTypeCAA
-		want []string
+		want []interface{}
 	}{
 		{
 			name: "ok",
 			caa:  "10 issue aaa",
-			want: []string{"10", "issue", "aaa"},
+			want: []interface{}{int64(10), "issue", "aaa"},
 		},
 		{
 			name: "wrong",
@@ -63,12 +63,12 @@ func TestRecordTypeAny_ToContent(t *testing.T) {
 	tests := []struct {
 		name string
 		any  RecordTypeAny
-		want []string
+		want []interface{}
 	}{
 		{
 			name: "ok",
 			any:  "any any 34",
-			want: []string{"any any 34"},
+			want: []interface{}{"any any 34"},
 		},
 	}
 	for _, tt := range tests {
@@ -88,7 +88,7 @@ func TestContentFromValue(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []string
+		want []interface{}
 	}{
 		{
 			name: "mx",
@@ -96,7 +96,7 @@ func TestContentFromValue(t *testing.T) {
 				recordType: "MX",
 				content:    "10 mx.com",
 			},
-			want: []string{"10", "mx.com"},
+			want: []interface{}{int64(10), "mx.com"},
 		},
 		{
 			name: "caa",
@@ -104,7 +104,7 @@ func TestContentFromValue(t *testing.T) {
 				recordType: "CAA",
 				content:    "10 issue com",
 			},
-			want: []string{"10", "issue", "com"},
+			want: []interface{}{int64(10), "issue", "com"},
 		},
 		{
 			name: "any",
@@ -112,7 +112,7 @@ func TestContentFromValue(t *testing.T) {
 				recordType: "A",
 				content:    "10 issue com",
 			},
-			want: []string{"10 issue com"},
+			want: []interface{}{"10 issue com"},
 		},
 	}
 	for _, tt := range tests {
@@ -419,7 +419,7 @@ func TestNewResourceMetaDefault(t *testing.T) {
 
 func TestResourceRecords_AddMeta(t *testing.T) {
 	type fields struct {
-		Content []string
+		Content []interface{}
 		Meta    map[string]interface{}
 	}
 	type args struct {
