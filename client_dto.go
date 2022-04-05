@@ -126,14 +126,14 @@ type RecordTypeCAA string
 func (caa RecordTypeCAA) ToContent() []interface{} {
 	parts := strings.Split(string(caa), " ")
 	// nolint: gomnd
-	if len(parts) != 3 {
+	if len(parts) < 3 {
 		return nil
 	}
 	content := make([]interface{}, len(parts))
 	// nolint: gomnd
 	content[1] = parts[1]
 	// nolint: gomnd
-	content[2] = parts[2]
+	content[2] = strings.Join(parts[2:], " ")
 	// nolint: gomnd
 	content[0], _ = strconv.ParseInt(parts[0], 10, 64)
 
