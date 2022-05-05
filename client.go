@@ -25,6 +25,7 @@ const (
 // Client for DNS API.
 type Client struct {
 	HTTPClient *http.Client
+	UserAgent  string
 	BaseURL    *url.URL
 	authHeader func() string
 	Debug      bool
@@ -311,6 +312,9 @@ func (c *Client) do(ctx context.Context, method, uri string, bodyParams interfac
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", c.authHeader())
+	if c.UserAgent != "" {
+		req.Header.Set("User-Agent", c.UserAgent)
+	}
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
