@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://api.gcorelabs.com/dns"
+	defaultBaseURL = "https://api.gcore.com/dns"
 	tokenHeader    = "APIKey"
 	defaultTimeOut = 10 * time.Second
 )
@@ -73,8 +73,8 @@ func NewClient(authorizer func() authHeader, opts ...func(*Client)) *Client {
 	return cl
 }
 
-// CreateZone add new zone.
-// https://dnsapi.gcorelabs.com/docs#operation/CreateZone
+// CreateZone adds new zone.
+// https://apidocs.gcore.com/dns#tag/zones/operation/CreateZone
 func (c *Client) CreateZone(ctx context.Context, name string) (uint64, error) {
 	res := CreateResponse{}
 	params := AddZone{Name: name}
@@ -90,7 +90,7 @@ func (c *Client) CreateZone(ctx context.Context, name string) (uint64, error) {
 }
 
 // Zones gets all zones.
-// https://dnsapi.gcorelabs.com/docs#operation/Zones
+// https://apidocs.gcore.com/dns#tag/zones/operation/Zones
 func (c *Client) Zones(ctx context.Context, filters ...func(zone *ZonesFilter)) ([]Zone, error) {
 	res := ListZones{}
 	filter := ZonesFilter{}
@@ -133,7 +133,7 @@ func (c *Client) ZonesWithRecords(ctx context.Context, filters ...func(zone *Zon
 }
 
 // DeleteZone gets zone information.
-// https://dnsapi.gcorelabs.com/docs#operation/DeleteZone
+// https://apidocs.gcore.com/dns#tag/zones/operation/DeleteZone
 func (c *Client) DeleteZone(ctx context.Context, name string) error {
 	name = strings.Trim(name, ".")
 	uri := path.Join("/v2/zones", name)
@@ -147,7 +147,7 @@ func (c *Client) DeleteZone(ctx context.Context, name string) error {
 }
 
 // Zone gets zone information.
-// https://dnsapi.gcorelabs.com/docs#operation/Zone
+// https://apidocs.gcore.com/dns#tag/zones/operation/Zone
 func (c *Client) Zone(ctx context.Context, name string) (Zone, error) {
 	name = strings.Trim(name, ".")
 	zone := Zone{}
@@ -162,7 +162,7 @@ func (c *Client) Zone(ctx context.Context, name string) (Zone, error) {
 }
 
 // RRSet gets RRSet item.
-// https://dnsapi.gcorelabs.com/docs#operation/RRSet
+// https://apidocs.gcore.com/dns#tag/rrsets/operation/RRSet
 func (c *Client) RRSet(ctx context.Context, zone, name, recordType string) (RRSet, error) {
 	zone, name = strings.Trim(zone, "."), strings.Trim(name, ".")
 	var result RRSet
@@ -177,7 +177,7 @@ func (c *Client) RRSet(ctx context.Context, zone, name, recordType string) (RRSe
 }
 
 // DeleteRRSet removes RRSet type records.
-// https://dnsapi.gcorelabs.com/docs#operation/DeleteRRSet
+// https://apidocs.gcore.com/dns#tag/rrsets/operation/DeleteRRSet
 func (c *Client) DeleteRRSet(ctx context.Context, zone, name, recordType string) error {
 	zone, name = strings.Trim(zone, "."), strings.Trim(name, ".")
 	uri := path.Join("/v2/zones", zone, name, recordType)
@@ -270,7 +270,7 @@ func (c *Client) AddZoneRRSet(ctx context.Context,
 	return c.CreateRRSet(ctx, zone, recordName, recordType, record)
 }
 
-// CreateRRSet https://dnsapi.gcorelabs.com/docs#operation/CreateRRSet
+// CreateRRSet https://apidocs.gcore.com/dns#tag/rrsets/operation/CreateRRSet
 func (c *Client) CreateRRSet(ctx context.Context, zone, name, recordType string, record RRSet) error {
 	zone, name = strings.Trim(zone, "."), strings.Trim(name, ".")
 	uri := path.Join("/v2/zones", zone, name, recordType)
@@ -278,7 +278,7 @@ func (c *Client) CreateRRSet(ctx context.Context, zone, name, recordType string,
 	return c.do(ctx, http.MethodPost, uri, record, nil)
 }
 
-// UpdateRRSet https://dnsapi.gcorelabs.com/docs#operation/UpdateRRSet
+// UpdateRRSet https://apidocs.gcore.com/dns#tag/rrsets/operation/UpdateRRSet
 func (c *Client) UpdateRRSet(ctx context.Context, zone, name, recordType string, record RRSet) error {
 	zone, name = strings.Trim(zone, "."), strings.Trim(name, ".")
 	uri := path.Join("/v2/zones", zone, name, recordType)
