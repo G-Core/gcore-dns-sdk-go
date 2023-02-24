@@ -287,6 +287,113 @@ func TestClient_DeleteRRSet_error(t *testing.T) {
 	require.Equal(t, err.Error(), "delete record request: 500: oops")
 }
 
+func TestClient_ZoneNameservers(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name     string
+		zoneName string
+		setUpMux func(mux *http.ServeMux)
+
+		expRes []string
+		expErr string
+	}{
+		{
+			name:     "failed to get rrsets",
+			zoneName: "example.com",
+			setUpMux: func(mux *http.ServeMux) {
+				mux.Handle("/v2/zones/example.com/rrsets", validationHandler{
+					method: http.MethodGet,
+					next:   handleAPIError(),
+				})
+			},
+			expErr: "get rrsets example.com: 500: oops",
+		},
+		{
+			name:     "empty response",
+			zoneName: "example.com",
+			setUpMux: func(mux *http.ServeMux) {
+				mux.Handle("/v2/zones/example.com/rrsets", validationHandler{
+					method: http.MethodGet,
+					next:   handleJSONResponse(RRSets{}),
+				})
+			},
+			expRes: []string{},
+		},
+		{
+			name:     "no nameservers",
+			zoneName: "example.com",
+			setUpMux: func(mux *http.ServeMux) {
+				mux.Handle("/v2/zones/example.com/rrsets", validationHandler{
+					method: http.MethodGet,
+					next: handleJSONResponse(RRSets{
+						RRSets: []RRSet{
+							{Type: txtRecordType},
+							{Type: txtRecordType},
+							{Type: "A"},
+							{Type: "AAAA"},
+							{Type: "CNAME"},
+						},
+					}),
+				})
+			},
+			expRes: []string{},
+		},
+		{
+			name:     "nameservers",
+			zoneName: "example.com",
+			setUpMux: func(mux *http.ServeMux) {
+				mux.Handle("/v2/zones/example.com/rrsets", validationHandler{
+					method: http.MethodGet,
+					next: handleJSONResponse(RRSets{
+						RRSets: []RRSet{
+							{Type: "CNAME"},
+							{Type: NSRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns1.example.com."}}}},
+							{Type: NSRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns2.example.com.", "ns3.example.com."}}}},
+						},
+					}),
+				})
+			},
+			expRes: []string{"ns1.example.com.", "ns2.example.com.", "ns3.example.com."},
+		},
+		{
+			name:     "nameservers ignore duplicates",
+			zoneName: "example.com",
+			setUpMux: func(mux *http.ServeMux) {
+				mux.Handle("/v2/zones/example.com/rrsets", validationHandler{
+					method: http.MethodGet,
+					next: handleJSONResponse(RRSets{
+						RRSets: []RRSet{
+							{Type: NSRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns1.example.com."}}}},
+							{Type: NSRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns1.example.com."}}}},
+						},
+					}),
+				})
+			},
+			expRes: []string{"ns1.example.com."},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			mux, client := setupTest(t)
+			tc.setUpMux(mux)
+
+			res, err := client.ZoneNameservers(context.Background(), tc.zoneName)
+
+			require.Equal(t, tc.expRes, res)
+			if tc.expErr != "" {
+				require.EqualError(t, err, tc.expErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestClient_AddRRSet(t *testing.T) {
 	testCases := []struct {
 		desc          string

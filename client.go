@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://api.gcore.com/dns"
+	defaultBaseURL = "https://api.preprod.world/dns"
 	tokenHeader    = "APIKey"
 	defaultTimeOut = 10 * time.Second
 )
@@ -159,6 +159,43 @@ func (c *Client) Zone(ctx context.Context, name string) (Zone, error) {
 	}
 
 	return zone, nil
+}
+
+const NSRecordType = "NS"
+
+// ZoneNameservers gets zone nameservers.
+func (c *Client) ZoneNameservers(ctx context.Context, name string) ([]string, error) {
+	name = strings.Trim(name, ".")
+	uri := fmt.Sprintf("/v2/zones/%s/rrsets?all=true", name)
+
+	var rrsets RRSets
+	err := c.do(ctx, http.MethodGet, uri, nil, &rrsets)
+	if err != nil {
+		return nil, fmt.Errorf("get rrsets %s: %w", name, err)
+	}
+
+	resp := make([]string, 0)
+	exists := make(map[string]struct{})
+
+	for _, rrset := range rrsets.RRSets {
+		if rrset.Type != NSRecordType {
+			continue
+		}
+
+		for _, record := range rrset.Records {
+			for _, content := range record.Content {
+				contentStr := fmt.Sprint(content)
+				if _, ok := exists[contentStr]; ok {
+					continue
+				}
+
+				exists[contentStr] = struct{}{}
+				resp = append(resp, contentStr)
+			}
+		}
+	}
+
+	return resp, nil
 }
 
 // RRSet gets RRSet item.

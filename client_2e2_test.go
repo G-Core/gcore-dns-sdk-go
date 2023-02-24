@@ -3,12 +3,20 @@ package dnssdk
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/errgroup"
 )
+
+// var defaultNS = []string{"ns1.gcorelabs.net", "ns2.gcdn.services"} // prod
+var defaultNS = []string{"preprod-ns1.gcorelabs.net", "preprod-ns2.gcdn.services"} // preprod
 
 func TestNewClient(t *testing.T) {
 	apiToken := strings.TrimSpace(os.Getenv("TESTS_API_PERMANENT_TOKEN"))
@@ -22,28 +30,16 @@ func TestNewClient(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	sold := time.Now().Unix()
-
-	// create zone
-
-	zoneName := fmt.Sprintf("testzone%d.sdk", sold)
+	zoneName := fmt.Sprintf("testzone.%s.sdk.com", randStr())
 	_, err := sdk.CreateZone(ctx, zoneName)
-	if err != nil {
-		t.Fatal("create zone", err)
-	}
+	require.NoError(t, err, "create zone")
 
 	// read zone
-
 	zoneResp, err := sdk.Zone(ctx, zoneName)
-	if err != nil {
-		t.Fatal("read zone", err)
-	}
-	if !strings.Contains(zoneResp.Name, zoneName) {
-		t.Fatalf("read zone want %s got %s", zoneName, zoneResp.Name)
-	}
+	require.NoError(t, err, "read zone")
+	require.Contains(t, zoneResp.Name, zoneName, "read zone")
 
 	// add rrSet
-
 	recName := "www." + zoneName
 	recType := "TXT"
 	recVal := "12345"
@@ -62,9 +58,8 @@ func TestNewClient(t *testing.T) {
 		},
 		30,
 		WithFilters(NewDefaultFilter(1, true)))
-	if err != nil {
-		t.Fatal("add rrSet", err)
-	}
+
+	require.NoError(t, err, "add rrSet")
 
 	err = sdk.AddZoneRRSet(ctx,
 		zoneName,
@@ -75,11 +70,8 @@ func TestNewClient(t *testing.T) {
 		},
 		30,
 		WithFilters(NewDefaultFilter(1, true)))
-	if err != nil {
-		t.Fatal("add rrSet", err)
-	}
 
-	// update rrSet
+	require.NoError(t, err, "add rrSet")
 
 	recVal2 := "second"
 	err = sdk.UpdateRRSet(ctx,
@@ -101,21 +93,14 @@ func TestNewClient(t *testing.T) {
 			Filters: []RecordFilter{NewGeoDNSFilter(1, true)},
 		},
 	)
-	if err != nil {
-		t.Fatal("update rrSet", err)
-	}
-
-	// read zone with records
+	require.NoError(t, err)
 
 	zonesResp, err := sdk.ZonesWithRecords(ctx, func(f *ZonesFilter) {
 		f.Names = []string{zoneName}
 	})
-	if err != nil {
-		t.Fatal("read zone with record", err)
-	}
-	if len(zonesResp) != 1 {
-		t.Fatalf("read zone with records: wrong len: got %d", len(zonesResp))
-	}
+	require.NoError(t, err, "read zone with records")
+	require.Len(t, zonesResp, 1, "read zone with records")
+
 	wantZone := Zone{
 		Name: zoneName,
 		Records: []ZoneRecord{
@@ -127,9 +112,8 @@ func TestNewClient(t *testing.T) {
 			},
 		},
 	}
-	if zonesResp[0].Name != wantZone.Name {
-		t.Fatalf("read zone with records: wrong name: got= %s , want= %s", zonesResp[0].Name, wantZone.Name)
-	}
+	require.Equal(t, wantZone, zonesResp[0], "read zone with records")
+
 	recChecked := false
 	for _, rec := range zonesResp[0].Records {
 		if rec.Type != recType {
@@ -146,20 +130,19 @@ func TestNewClient(t *testing.T) {
 			zonesResp[0].Records, wantZone.Records)
 	}
 
-	// delete rrSet content
+	ns, err := sdk.ZoneNameservers(ctx, zoneName)
+	if err != nil {
+		t.Fatal("read zone nameservers", err)
+	}
+
+	assert.ElementsMatch(t, ns, defaultNS, "read zone nameservers")
 
 	err = sdk.DeleteRRSetRecord(ctx, zoneName, recName, recType, recVal2)
-
-	if err != nil {
-		t.Fatal("delete rrSet content", err)
-	}
-
-	// read rrSet
+	require.NoError(t, err, "delete rrSet record")
 
 	rrSet, err := sdk.RRSet(ctx, zoneName, recName, recType)
-	if err != nil {
-		t.Fatal("read rrSet", err)
-	}
+	require.NoError(t, err, "read rrSet")
+
 	wantRrSet := RRSet{
 		TTL: 60,
 		Records: []ResourceRecord{
@@ -175,45 +158,105 @@ func TestNewClient(t *testing.T) {
 		},
 		Filters: []RecordFilter{NewGeoDNSFilter(1, true)},
 	}
-	if rrSet.TTL != wantRrSet.TTL {
-		t.Fatalf("read rrSet ttl: wrong res: got= %+v , want= %+v",
-			rrSet.TTL, wantRrSet.TTL)
-	}
-	if !reflect.DeepEqual(rrSet.Records[0].Content, wantRrSet.Records[0].Content) {
-		t.Fatalf("read rrSet content: wrong res: got= %+v , want= %+v",
-			rrSet.Records[0].Content, wantRrSet.Records[0].Content)
-	}
-	if !reflect.DeepEqual(rrSet.Filters, wantRrSet.Filters) {
-		t.Fatalf("read rrSet filters: wrong res: got= %+v , want= %+v",
-			rrSet.Filters, wantRrSet.Filters)
-	}
-	if fmt.Sprint(rrSet.Records[0].Meta["asn"]) != fmt.Sprint(wantRrSet.Records[0].Meta["asn"]) {
-		t.Fatalf("read rrSet meta asn: wrong res: got= %+v %T, want= %+v %T",
-			rrSet.Records[0].Meta["asn"], rrSet.Records[0].Meta["asn"],
-			wantRrSet.Records[0].Meta["asn"], wantRrSet.Records[0].Meta["asn"])
-	}
-	if fmt.Sprint(rrSet.Records[0].Meta["default"]) != fmt.Sprint(wantRrSet.Records[0].Meta["default"]) {
-		t.Fatalf("read rrSet meta default: wrong res: got= %+v %T, want= %+v",
-			rrSet.Records[0].Meta["default"], rrSet.Records[0].Meta["default"], wantRrSet.Records[0].Meta["default"])
-	}
-	if fmt.Sprint(rrSet.Records[0].Meta["latlong"]) != fmt.Sprint(wantRrSet.Records[0].Meta["latlong"]) {
-		t.Fatalf("read rrSet meta latlong: wrong res: got= %+v %T , want= %+v",
-			rrSet.Records[0].Meta["latlong"], rrSet.Records[0].Meta["latlong"], wantRrSet.Records[0].Meta["latlong"])
-	}
 
-	// delete rrSet
+	wantRecord := wantRrSet.Records[0]
+	gotRecord := rrSet.Records[0]
+
+	assert.Equal(t, rrSet.TTL, wantRrSet.TTL, "ttl")
+	assert.Equal(t, rrSet.Filters, wantRrSet.Filters, "filters")
+	assert.Equal(t, gotRecord.Content, wantRecord.Content, "content")
+	assert.Equal(t, gotRecord.Meta["default"], wantRecord.Meta["default"], "meta default")
+	assert.Equal(t, gotRecord.Meta["latlong"], wantRecord.Meta["latlong"], "meta latlong")
+	assert.Equal(t, fmt.Sprint(gotRecord.Meta["asn"]), fmt.Sprint(wantRecord.Meta["asn"]), "meta asn")
 
 	err = sdk.DeleteRRSet(ctx, zoneName, recName, recType)
-
-	if err != nil {
-		t.Fatal("delete rrSet", err)
-	}
-
-	// delete zone
+	require.NoError(t, err, "delete rrSet")
 
 	err = sdk.DeleteZone(ctx, zoneName)
+	require.NoError(t, err, "delete zone")
+}
 
-	if err != nil {
-		t.Fatal("delete zone", err)
+func TestClient_ZoneNameserversE2E(t *testing.T) {
+	apiToken := strings.TrimSpace(os.Getenv("TESTS_API_PERMANENT_TOKEN"))
+	if apiToken == "" {
+		t.Skip("no defined TESTS_API_PERMANENT_TOKEN")
 	}
+
+	sdk := NewClient(PermanentAPIKeyAuth(apiToken), func(client *Client) {
+		client.Debug = true
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	zoneName := fmt.Sprintf("testzone.%s.sdk.com", randStr())
+	_, err := sdk.CreateZone(ctx, zoneName)
+	require.NoError(t, err, "create zone")
+
+	defer func() {
+		err = sdk.DeleteZone(ctx, zoneName)
+		require.NoError(t, err, "cleanup zone")
+	}()
+
+	expZones := []string{
+		"ns3.gcdn.services", "ns4.gcdn.services", "ns5.gcdn.services", "ns6.gcdn.services",
+		"ns7.gcdn.services", "ns8.gcdn.services", "ns9.gcdn.services", "ns10.gcdn.services",
+		"ns11.gcdn.services", "ns12.gcdn.services", "ns13.gcdn.services", "ns14.gcdn.services",
+		"ns15.gcdn.services", "ns16.gcdn.services", "ns17.gcdn.services", "ns18.gcdn.services",
+		"ns19.gcdn.services", "ns20.gcdn.services", "ns21.gcdn.services", "ns22.gcdn.services",
+	}
+
+	group, ctxGroup := errgroup.WithContext(ctx)
+
+	defaultTTL := 30
+	withDefaultFilters := WithFilters(NewDefaultFilter(1, true))
+
+	for _, z := range expZones {
+		zone := z
+		group.Go(func() error {
+			rr := ResourceRecord{}
+			rr.SetContent(NSRecordType, zone)
+
+			return sdk.AddZoneRRSet(ctxGroup, zoneName, randStr()+"."+zoneName, NSRecordType, []ResourceRecord{rr},
+				defaultTTL, withDefaultFilters)
+		})
+	}
+
+	group.Go(func() error {
+		rr := ResourceRecord{}
+		rr.SetContent("TXT", "12345")
+		rr.AddMeta(NewResourceMetaLatLong("3.3,4.4"))
+
+		return sdk.AddZoneRRSet(ctxGroup, zoneName, "www."+zoneName, "TXT", []ResourceRecord{rr},
+			defaultTTL, withDefaultFilters)
+	})
+
+	group.Go(func() error {
+		rr := ResourceRecord{}
+		rr.SetContent("MX", "10 my.mail.server.com")
+
+		return sdk.AddZoneRRSet(ctxGroup, zoneName, "www."+zoneName, "MX", []ResourceRecord{rr},
+			defaultTTL, withDefaultFilters)
+	})
+
+	err = group.Wait()
+	require.NoError(t, err, "add zone rrSets")
+
+	ns, err := sdk.ZoneNameservers(ctx, zoneName)
+	if err != nil {
+		t.Fatal("read zone nameservers", err)
+	}
+
+	expNS := append(expZones, defaultNS...)
+	assert.ElementsMatch(t, ns, expNS)
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
+
+func randStr() string {
+	b := make([]rune, 10)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }
