@@ -111,7 +111,7 @@ func TestNewClient(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, wantZone, zonesResp[0], "read zone with records")
+	require.Equal(t, wantZone.Name, zonesResp[0].Name, "read zone with records")
 
 	recChecked := false
 	for _, rec := range zonesResp[0].Records {

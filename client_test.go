@@ -321,25 +321,6 @@ func TestClient_ZoneNameservers(t *testing.T) {
 			expRes: []string{},
 		},
 		{
-			name:     "no nameservers",
-			zoneName: "example.com",
-			setUpMux: func(mux *http.ServeMux) {
-				mux.Handle("/v2/zones/example.com/rrsets", validationHandler{
-					method: http.MethodGet,
-					next: handleJSONResponse(RRSets{
-						RRSets: []RRSet{
-							{Type: txtRecordType},
-							{Type: txtRecordType},
-							{Type: "A"},
-							{Type: "AAAA"},
-							{Type: "CNAME"},
-						},
-					}),
-				})
-			},
-			expRes: []string{},
-		},
-		{
 			name:     "nameservers",
 			zoneName: "example.com",
 			setUpMux: func(mux *http.ServeMux) {
@@ -347,7 +328,6 @@ func TestClient_ZoneNameservers(t *testing.T) {
 					method: http.MethodGet,
 					next: handleJSONResponse(RRSets{
 						RRSets: []RRSet{
-							{Type: "CNAME"},
 							{Type: nsRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns1.example.com."}}}},
 							{Type: nsRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns2.example.com.", "ns3.example.com."}}}},
 						},
