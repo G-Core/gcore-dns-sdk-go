@@ -214,9 +214,9 @@ func TestClient_ZoneNameserversE2E(t *testing.T) {
 		zone := z
 		group.Go(func() error {
 			rr := ResourceRecord{}
-			rr.SetContent(NSRecordType, zone)
+			rr.SetContent(nsRecordType, zone)
 
-			return sdk.AddZoneRRSet(ctxGroup, zoneName, randStr()+"."+zoneName, NSRecordType, []ResourceRecord{rr},
+			return sdk.AddZoneRRSet(ctxGroup, zoneName, randStr()+"."+zoneName, nsRecordType, []ResourceRecord{rr},
 				defaultTTL, withDefaultFilters)
 		})
 	}

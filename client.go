@@ -161,12 +161,12 @@ func (c *Client) Zone(ctx context.Context, name string) (Zone, error) {
 	return zone, nil
 }
 
-const NSRecordType = "NS"
+const nsRecordType = "NS"
 
 // ZoneNameservers gets zone nameservers.
 func (c *Client) ZoneNameservers(ctx context.Context, name string) ([]string, error) {
 	name = strings.Trim(name, ".")
-	uri := fmt.Sprintf("/v2/zones/%s/rrsets?all=true", name)
+	uri := fmt.Sprintf("/v2/zones/%s/rrsets?all=true&type=%s", name, nsRecordType)
 
 	var rrsets RRSets
 	err := c.do(ctx, http.MethodGet, uri, nil, &rrsets)
@@ -178,10 +178,6 @@ func (c *Client) ZoneNameservers(ctx context.Context, name string) ([]string, er
 	exists := make(map[string]struct{})
 
 	for _, rrset := range rrsets.RRSets {
-		if rrset.Type != NSRecordType {
-			continue
-		}
-
 		for _, record := range rrset.Records {
 			for _, content := range record.Content {
 				contentStr := fmt.Sprint(content)

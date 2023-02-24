@@ -348,8 +348,8 @@ func TestClient_ZoneNameservers(t *testing.T) {
 					next: handleJSONResponse(RRSets{
 						RRSets: []RRSet{
 							{Type: "CNAME"},
-							{Type: NSRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns1.example.com."}}}},
-							{Type: NSRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns2.example.com.", "ns3.example.com."}}}},
+							{Type: nsRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns1.example.com."}}}},
+							{Type: nsRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns2.example.com.", "ns3.example.com."}}}},
 						},
 					}),
 				})
@@ -364,8 +364,8 @@ func TestClient_ZoneNameservers(t *testing.T) {
 					method: http.MethodGet,
 					next: handleJSONResponse(RRSets{
 						RRSets: []RRSet{
-							{Type: NSRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns1.example.com."}}}},
-							{Type: NSRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns1.example.com."}}}},
+							{Type: nsRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns1.example.com."}}}},
+							{Type: nsRecordType, Records: []ResourceRecord{{Content: []interface{}{"ns1.example.com."}}}},
 						},
 					}),
 				})
