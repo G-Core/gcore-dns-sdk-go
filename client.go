@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://api.preprod.world/dns"
+	defaultBaseURL = "https://api.gcore.com/dns"
 	tokenHeader    = "APIKey"
 	defaultTimeOut = 10 * time.Second
 )

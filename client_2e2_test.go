@@ -15,8 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// var defaultNS = []string{"ns1.gcorelabs.net", "ns2.gcdn.services"} // prod
-var defaultNS = []string{"preprod-ns1.gcorelabs.net", "preprod-ns2.gcdn.services"} // preprod
+var defaultNS = []string{"ns1.gcorelabs.net", "ns2.gcdn.services"}
 
 func TestNewClient(t *testing.T) {
 	apiToken := strings.TrimSpace(os.Getenv("TESTS_API_PERMANENT_TOKEN"))
