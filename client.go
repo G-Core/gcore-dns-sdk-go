@@ -161,6 +161,39 @@ func (c *Client) Zone(ctx context.Context, name string) (Zone, error) {
 	return zone, nil
 }
 
+const nsRecordType = "NS"
+
+// ZoneNameservers gets zone nameservers.
+func (c *Client) ZoneNameservers(ctx context.Context, name string) ([]string, error) {
+	name = strings.Trim(name, ".")
+	uri := fmt.Sprintf("/v2/zones/%s/rrsets?all=true&type=%s", name, nsRecordType)
+
+	var rrsets RRSets
+	err := c.do(ctx, http.MethodGet, uri, nil, &rrsets)
+	if err != nil {
+		return nil, fmt.Errorf("get rrsets %s: %w", name, err)
+	}
+
+	resp := make([]string, 0)
+	exists := make(map[string]struct{})
+
+	for _, rrset := range rrsets.RRSets {
+		for _, record := range rrset.Records {
+			for _, content := range record.Content {
+				contentStr := fmt.Sprint(content)
+				if _, ok := exists[contentStr]; ok {
+					continue
+				}
+
+				exists[contentStr] = struct{}{}
+				resp = append(resp, contentStr)
+			}
+		}
+	}
+
+	return resp, nil
+}
+
 // RRSet gets RRSet item.
 // https://apidocs.gcore.com/dns#tag/rrsets/operation/RRSet
 func (c *Client) RRSet(ctx context.Context, zone, name, recordType string) (RRSet, error) {

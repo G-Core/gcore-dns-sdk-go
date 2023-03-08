@@ -31,9 +31,14 @@ type CreateResponse struct {
 
 // RRSet dto as part of zone info from API
 type RRSet struct {
+	Type    string           `json:"type"`
 	TTL     int              `json:"ttl"`
 	Records []ResourceRecord `json:"resource_records"`
 	Filters []RecordFilter   `json:"filters"`
+}
+
+type RRSets struct {
+	RRSets []RRSet `json:"rrsets"`
 }
 
 // ResourceRecord dto describe records in RRSet
