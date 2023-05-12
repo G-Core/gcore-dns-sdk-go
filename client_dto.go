@@ -2,6 +2,7 @@ package dnssdk
 
 import (
 	"fmt"
+	"math"
 	"net"
 	"strconv"
 	"strings"
@@ -43,9 +44,9 @@ type RRSets struct {
 
 // ResourceRecord dto describe records in RRSet
 type ResourceRecord struct {
-	Content []interface{}          `json:"content"`
-	Meta    map[string]interface{} `json:"meta"`
-	Enabled bool                   `json:"enabled"`
+	Content []any          `json:"content"`
+	Meta    map[string]any `json:"meta"`
+	Enabled bool           `json:"enabled"`
 }
 
 // ContentToString as short value
@@ -102,20 +103,20 @@ func NewFirstNFilter(limit uint, strict bool) RecordFilter {
 
 // RecordType contract
 type RecordType interface {
-	ToContent() []interface{}
+	ToContent() []any
 }
 
 // RecordTypeMX as type of record
 type RecordTypeMX string
 
 // ToContent convertor
-func (mx RecordTypeMX) ToContent() []interface{} {
+func (mx RecordTypeMX) ToContent() []any {
 	parts := strings.Split(string(mx), " ")
 	// nolint: gomnd
 	if len(parts) != 2 {
 		return nil
 	}
-	content := make([]interface{}, len(parts))
+	content := make([]any, len(parts))
 	// nolint: gomnd
 	content[1] = parts[1]
 	// nolint: gomnd
@@ -128,13 +129,13 @@ func (mx RecordTypeMX) ToContent() []interface{} {
 type RecordTypeCAA string
 
 // ToContent convertor
-func (caa RecordTypeCAA) ToContent() []interface{} {
+func (caa RecordTypeCAA) ToContent() []any {
 	parts := strings.Split(string(caa), " ")
 	// nolint: gomnd
 	if len(parts) < 3 {
 		return nil
 	}
-	content := make([]interface{}, len(parts))
+	content := make([]any, len(parts))
 	// nolint: gomnd
 	content[1] = parts[1]
 	// nolint: gomnd
@@ -145,17 +146,74 @@ func (caa RecordTypeCAA) ToContent() []interface{} {
 	return content
 }
 
+// RecordTypeHTTPS_SCVB as type of record
+type RecordTypeHTTPS_SCVB string
+
+// function to parse uint16
+func tryParseUint16(x string) any {
+	v, err := strconv.ParseFloat(x, 64)
+	if err != nil {
+		return x
+	}
+	if v > math.MaxUint16 || v < 0 {
+		return v
+	}
+	u := uint16(v)
+	if float64(u) != v { // contains fractional
+		return v
+	}
+	return u
+}
+
+// ToContent convertor
+func (r RecordTypeHTTPS_SCVB) ToContent() (res []any) {
+	arr := strings.Split(string(r), ` `)
+	if len(arr) == 0 {
+		return []any{}
+	}
+	if len(arr) >= 1 { // try parse priority
+		res = append(res, tryParseUint16(arr[0]))
+	}
+	if len(arr) >= 2 { // try parse port
+		res = append(res, arr[1])
+	}
+	for i := 2; i < len(arr); i++ { // try parse params
+		kvParam := arr[i]
+		idx := strings.Index(kvParam, `=`) + 1
+		if idx <= 0 {
+			idx = len(kvParam) + 1
+		}
+		param := []any{}
+		k := kvParam[:idx-1]
+		param = append(param, k)
+		if idx <= len(kvParam) {
+			vStr := kvParam[idx:]
+			vStr = strings.Trim(vStr, `"`) // remove quote
+			vArr := strings.Split(vStr, `,`)
+			for _, v := range vArr {
+				if k == `port` { // try parse to number
+					param = append(param, tryParseUint16(v))
+					continue
+				}
+				param = append(param, v)
+			}
+		}
+		res = append(res, param)
+	}
+	return res
+}
+
 // RecordTypeSRV as type of record
 type RecordTypeSRV string
 
 // ToContent convertor
-func (srv RecordTypeSRV) ToContent() []interface{} {
+func (srv RecordTypeSRV) ToContent() []any {
 	parts := strings.Split(string(srv), " ")
 	// nolint: gomnd
 	if len(parts) != 4 {
 		return nil
 	}
-	content := make([]interface{}, len(parts))
+	content := make([]any, len(parts))
 	// nolint: gomnd
 	content[0], _ = strconv.ParseInt(parts[0], 10, 64)
 	// nolint: gomnd
@@ -172,8 +230,8 @@ func (srv RecordTypeSRV) ToContent() []interface{} {
 type RecordTypeAny string
 
 // ToContent convertor
-func (any RecordTypeAny) ToContent() []interface{} {
-	return []interface{}{string(any)}
+func (x RecordTypeAny) ToContent() []any {
+	return []any{string(x)}
 }
 
 // ToRecordType builder
@@ -185,12 +243,14 @@ func ToRecordType(rType, content string) RecordType {
 		return RecordTypeCAA(content)
 	case "srv":
 		return RecordTypeSRV(content)
+	case "https", "scvb":
+		return RecordTypeHTTPS_SCVB(content)
 	}
 	return RecordTypeAny(content)
 }
 
 // ContentFromValue convertor from flat value to valid for api
-func ContentFromValue(recordType, content string) []interface{} {
+func ContentFromValue(recordType, content string) []any {
 	rt := ToRecordType(recordType, content)
 	if rt == nil {
 		return nil
@@ -201,7 +261,7 @@ func ContentFromValue(recordType, content string) []interface{} {
 // ResourceMeta for ResourceRecord
 type ResourceMeta struct {
 	name     string
-	value    interface{}
+	value    any
 	validErr error
 }
 
@@ -311,7 +371,7 @@ func (r *ResourceRecord) AddMeta(meta ResourceMeta) *ResourceRecord {
 		return r
 	}
 	if r.Meta == nil {
-		r.Meta = map[string]interface{}{}
+		r.Meta = map[string]any{}
 	}
 	r.Meta[meta.name] = meta.value
 	return r

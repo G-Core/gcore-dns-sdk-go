@@ -238,6 +238,14 @@ func TestClient_ZoneNameserversE2E(t *testing.T) {
 			defaultTTL, withDefaultFilters)
 	})
 
+	group.Go(func() error {
+		rr := ResourceRecord{}
+		rr.SetContent("HTTPS", "1 . ip4hint=1.2.3.4,5.6.7.8")
+
+		return sdk.AddZoneRRSet(ctxGroup, zoneName, "www."+zoneName, "HTTPS", []ResourceRecord{rr},
+			defaultTTL, withDefaultFilters)
+	})
+
 	err = group.Wait()
 	require.NoError(t, err, "add zone rrSets")
 
