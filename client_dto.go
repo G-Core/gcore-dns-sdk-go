@@ -50,12 +50,37 @@ type ResourceRecord struct {
 }
 
 // ContentToString as short value
+// example from:
+// tls-ech.dev.            899     IN      HTTPS   1 . ech=AEn+DQBFKwAgACABWIHUGj4u+PIggYXcR5JF0gYk3dCRioBW8uJq9H4mKAAIAAEAAQABAANAEnB1YmxpYy50bHMtZWNoLmRldgAA
+// clickhouse.com.         899     IN      HTTPS   1 . alpn="h3,h3-29,h2" ipv4hint=172.66.40.249,172.66.43.7 ipv6hint=2606:4700:3108::ac42:28f9,2606:4700:3108::ac42:2b07
 func (r ResourceRecord) ContentToString() string {
 	parts := make([]string, len(r.Content))
 	for i := range r.Content {
-		parts[i] = fmt.Sprint(r.Content[i])
+		if arr, ok := r.Content[i].([]any); ok {
+			if len(arr) > 0 {
+				key := fmt.Sprint(arr[0])
+				if key == "alpn" { // only alpn quoted
+					parts[i] = fmt.Sprintf(`%s="%s"`, key, valuesJoin(arr[1:]))
+				} else if len(arr) == 1 {
+					parts[i] = key
+				} else {
+					parts[i] = fmt.Sprintf(`%s=%s`, key, valuesJoin(arr[1:]))
+				}
+			}
+		} else {
+			parts[i] = fmt.Sprint(r.Content[i])
+		}
 	}
 	return strings.Join(parts, " ")
+}
+
+// join https kv-params
+func valuesJoin(vs []any) (res string) {
+	for _, v := range vs {
+		res += "," + fmt.Sprint(v)
+	}
+	res = strings.Trim(res, ",")
+	return res
 }
 
 // RecordFilter describe Filters in RRSet

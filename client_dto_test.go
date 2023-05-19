@@ -778,3 +778,16 @@ func TestResourceRecords_AddMeta(t *testing.T) {
 		})
 	}
 }
+
+func TestHttpsSvcbParams(t *testing.T) {
+	r := ResourceRecord{
+		Content: []any{
+			[]any{"alpn", "h3", "h2"},
+			[]any{"no-default-alpn"},
+			[]any{"ipv4hint", "127.0.0.1", "10.0.0.1"},
+			[]any{"port", 1234},
+		},
+	}
+	str := r.ContentToString()
+	assert.Equal(t, `alpn="h3,h2" no-default-alpn ipv4hint=127.0.0.1,10.0.0.1 port=1234`, str)
+}
