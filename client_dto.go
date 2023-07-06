@@ -333,12 +333,12 @@ type FailoverHttpCheck struct {
 	Frequency uint16 `json:"frequency"`
 	Timeout   uint16 `json:"timeout"`
 	// HTTP only
+	Method         string  `json:"method,omitempty"` // GET, POST, PUT, DELETE, PATCH
+	URL            string  `json:"url,omitempty"`    // without / prefix
 	Host           *string `json:"host,omitempty"`
 	HttpStatusCode *uint16 `json:"http_status_code,omitempty"` // 100-599
-	Method         *string `json:"method,omitempty"`           // GET, POST, PUT, DELETE, PATCH
 	Regexp         *string `json:"regexp,omitempty"`
 	TLS            bool    `json:"tls"`
-	URL            *string `json:"url,omitempty"` // without / prefix
 }
 
 // FailoverTcpUdpCheck for failover meta property with protocol=TCP|UDP
