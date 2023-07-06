@@ -318,6 +318,71 @@ func NewResourceMetaAsn(asn ...uint64) ResourceMeta {
 	}
 }
 
+// NewResourceMetaFailoverFromMap for failover
+func NewResourceMetaFailoverFromMap(failover map[string]any) ResourceMeta {
+	return ResourceMeta{
+		name:  "failover",
+		value: failover,
+	}
+}
+
+// FailoverHttpCheck for failover meta property with protocol=HTTP
+type FailoverHttpCheck struct {
+	Protocol  string `json:"protocol"` // HTTP
+	Port      uint16 `json:"port"`
+	Frequency uint16 `json:"frequency"`
+	Timeout   uint16 `json:"timeout"`
+	// HTTP only
+	Host           *string `json:"host,omitempty"`
+	HttpStatusCode *uint16 `json:"http_status_code,omitempty"` // 100-599
+	Method         *string `json:"method,omitempty"`           // GET, POST, PUT, DELETE, PATCH
+	Regexp         *string `json:"regexp,omitempty"`
+	TLS            bool    `json:"tls"`
+	URL            *string `json:"url,omitempty"` // without / prefix
+}
+
+// FailoverTcpUdpCheck for failover meta property with protocol=TCP|UDP
+type FailoverTcpUdpCheck struct {
+	Protocol  string `json:"protocol"` // TCP or UDP
+	Port      uint16 `json:"port"`
+	Frequency uint16 `json:"frequency"`
+	Timeout   uint16 `json:"timeout"`
+	// TCP/UDP only
+	Command *string `json:"command"` // bytes to sent
+}
+
+// FailoverIcmpCheck for failover meta property with protocol=ICMP
+type FailoverIcmpCheck struct {
+	Protocol  string `json:"protocol"` // ICMP
+	Port      uint16 `json:"port"`
+	Frequency uint16 `json:"frequency"`
+	Timeout   uint16 `json:"timeout"`
+}
+
+// NewResourceMetaFailoverFromHttp for failover
+func NewResourceMetaFailoverFromHttp(failover FailoverHttpCheck) ResourceMeta {
+	return ResourceMeta{
+		name:  "failover",
+		value: failover,
+	}
+}
+
+// NewResourceMetaFailoverFromTcpUdp for TCP/DUP failover
+func NewResourceMetaFailoverFromTcpUdp(failover FailoverTcpUdpCheck) ResourceMeta {
+	return ResourceMeta{
+		name:  "failover",
+		value: failover,
+	}
+}
+
+// NewResourceMetaFailoverFromIcmp for ICMP failover
+func NewResourceMetaFailoverFromIcmp(failover FailoverIcmpCheck) ResourceMeta {
+	return ResourceMeta{
+		name:  "failover",
+		value: failover,
+	}
+}
+
 // NewResourceMetaLatLong for lat long meta
 func NewResourceMetaLatLong(latlong string) ResourceMeta {
 	latlong = strings.TrimLeft(latlong, "(")
