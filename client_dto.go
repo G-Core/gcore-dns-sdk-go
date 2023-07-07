@@ -349,6 +349,7 @@ type FailoverTcpUdpCheck struct {
 	Timeout   uint16 `json:"timeout"`
 	// TCP/UDP only
 	Command *string `json:"command"` // bytes to sent
+	Regexp  *string `json:"regexp,omitempty"`
 }
 
 // FailoverIcmpCheck for failover meta property with protocol=ICMP
