@@ -370,14 +370,14 @@ func (c *Client) do(ctx context.Context, method, uri string, bodyParams interfac
 		return e
 	}
 
-	if dest == nil {
-		return nil
-	}
-
 	// try read all so we can put breakpoint here
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("read response body: %w", err)
+	}
+
+	if dest == nil {
+		return nil
 	}
 
 	// nolint: wrapcheck
