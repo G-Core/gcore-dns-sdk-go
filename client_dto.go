@@ -36,6 +36,7 @@ type RRSet struct {
 	TTL     int              `json:"ttl"`
 	Records []ResourceRecord `json:"resource_records"`
 	Filters []RecordFilter   `json:"filters"`
+	Meta    map[string]any   `json:"meta"` // this one for failover, not Meta property inside Records
 }
 
 type RRSets struct {
