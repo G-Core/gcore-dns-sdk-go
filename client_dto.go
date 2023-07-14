@@ -55,75 +55,84 @@ type RRSet struct {
 }
 
 // SetMetaAsn
-func (r *RRSet) SetMetaAsn(asns []int) {
+func (r *RRSet) SetMetaAsn(asns []int) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["asn"] = asns
+	return r
 }
 
 // SetMetaContinents
-func (r *RRSet) SetMetaContinents(continents []string) {
+func (r *RRSet) SetMetaContinents(continents []string) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["continents"] = continents
+	return r
 }
 
 // SetMetaCountries
-func (r *RRSet) SetMetaCountries(countries []string) {
+func (r *RRSet) SetMetaCountries(countries []string) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["countries"] = countries
+	return r
 }
 
 // SetMetaLatLong
-func (r *RRSet) SetMetaLatLong(lat, long float64) {
+func (r *RRSet) SetMetaLatLong(lat, long float64) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["latlong"] = []float64{lat, long}
+	return r
 }
 
 // SetMetaFallback
-func (r *RRSet) SetMetaFallback(fallback bool) {
+func (r *RRSet) SetMetaFallback(fallback bool) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["fallback"] = fallback
+	return r
 }
 
 // SetMetaBackup
-func (r *RRSet) SetMetaBackup(backup bool) string {
+func (r *RRSet) SetMetaBackup(backup bool) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["backup"] = backup
+	return r
 }
 
 // SetMetaNotes
-func (r *RRSet) SetMetaNotes(notes string) string {
+func (r *RRSet) SetMetaNotes(notes string) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["notes"] = notes
+	return r
 }
 
 // SetMetaWeight
-func (r *RRSet) SetMetaWeight(weight float64) string {
+func (r *RRSet) SetMetaWeight(weight float64) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["weight"] = weight
+	return r
 }
 
 // SetMetaIP
-func (r *RRSet) SetMetaIP(ip string) string {
+func (r *RRSet) SetMetaIP(ip string) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["ip"] = ip
+	return r
 }
 
 // NewRRSetMetaFailoverFromMap for failover
@@ -134,11 +143,12 @@ func NewRRSetMetaFailoverFromMap(failover map[string]any) *RRSetMeta {
 }
 
 // SetMetaFailover
-func (r *RRSet) SetMetaFailover(failover map[string]any) string {
+func (r *RRSet) SetMetaFailover(failover map[string]any) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["failover"] = failover
+	return r
 }
 
 // FailoverHttpCheck for failover meta property with protocol=HTTP
@@ -183,11 +193,12 @@ func NewRRSetMetaMetaFailoverFromHttp(failover FailoverHttpCheck) *RRSetMeta {
 }
 
 // SetMetaFailoverHttp for failover
-func (r *RRSet) SetMetaFailoverHttp(check FailoverHttpCheck) {
+func (r *RRSet) SetMetaFailoverHttp(check FailoverHttpCheck) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["failover"] = check
+	return r
 }
 
 // NewRRSetMetaMetaFailoverFromTcpUdp for TCP/DUP failover
@@ -198,11 +209,12 @@ func NewRRSetMetaMetaFailoverFromTcpUdp(failover FailoverTcpUdpCheck) *RRSetMeta
 }
 
 // SetMetaFailoverTcpUdp for TCP/DUP failover
-func (r *RRSet) SetMetaFailoverTcpUdp(check FailoverTcpUdpCheck) {
+func (r *RRSet) SetMetaFailoverTcpUdp(check FailoverTcpUdpCheck) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["failover"] = check
+	return r
 }
 
 // NewRRSetMetaMetaFailoverFromIcmp for ICMP failover
@@ -213,11 +225,12 @@ func NewRRSetMetaMetaFailoverFromIcmp(failover FailoverIcmpCheck) *RRSetMeta {
 }
 
 // SetMetaFailoverIcmp for ICMP failover
-func (r *RRSet) SetMetaFailoverIcmp(check FailoverIcmpCheck) {
+func (r *RRSet) SetMetaFailoverIcmp(check FailoverIcmpCheck) *RRSet {
 	if r.Meta == nil {
 		r.Meta = RRSetMeta{}
 	}
 	r.Meta["failover"] = check
+	return r
 }
 
 type RRSets struct {
