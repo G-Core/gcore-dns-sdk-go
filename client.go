@@ -1,10 +1,12 @@
 package dnssdk
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -368,10 +370,16 @@ func (c *Client) do(ctx context.Context, method, uri string, bodyParams interfac
 		return e
 	}
 
+	// try read all so we can put breakpoint here
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("read response body: %w", err)
+	}
+
 	if dest == nil {
 		return nil
 	}
 
 	// nolint: wrapcheck
-	return json.NewDecoder(resp.Body).Decode(dest)
+	return json.NewDecoder(bytes.NewReader(body)).Decode(dest)
 }

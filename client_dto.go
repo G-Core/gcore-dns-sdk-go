@@ -36,6 +36,7 @@ type RRSet struct {
 	TTL     int              `json:"ttl"`
 	Records []ResourceRecord `json:"resource_records"`
 	Filters []RecordFilter   `json:"filters"`
+	Meta    map[string]any   `json:"meta"` // this one for failover, not Meta property inside Records
 }
 
 type RRSets struct {
@@ -315,6 +316,72 @@ func NewResourceMetaAsn(asn ...uint64) ResourceMeta {
 	return ResourceMeta{
 		name:  "asn",
 		value: asn,
+	}
+}
+
+// NewResourceMetaFailoverFromMap for failover
+func NewResourceMetaFailoverFromMap(failover map[string]any) ResourceMeta {
+	return ResourceMeta{
+		name:  "failover",
+		value: failover,
+	}
+}
+
+// FailoverHttpCheck for failover meta property with protocol=HTTP
+type FailoverHttpCheck struct {
+	Protocol  string `json:"protocol"` // HTTP
+	Port      uint16 `json:"port"`
+	Frequency uint16 `json:"frequency"`
+	Timeout   uint16 `json:"timeout"`
+	// HTTP only
+	Method         string  `json:"method,omitempty"` // GET, POST, PUT, DELETE, PATCH
+	URL            string  `json:"url,omitempty"`    // without / prefix
+	Host           *string `json:"host,omitempty"`
+	HttpStatusCode *uint16 `json:"http_status_code,omitempty"` // 100-599
+	Regexp         *string `json:"regexp,omitempty"`
+	TLS            bool    `json:"tls"`
+}
+
+// FailoverTcpUdpCheck for failover meta property with protocol=TCP|UDP
+type FailoverTcpUdpCheck struct {
+	Protocol  string `json:"protocol"` // TCP or UDP
+	Port      uint16 `json:"port"`
+	Frequency uint16 `json:"frequency"`
+	Timeout   uint16 `json:"timeout"`
+	// TCP/UDP only
+	Command *string `json:"command"` // bytes to sent
+	Regexp  *string `json:"regexp,omitempty"`
+}
+
+// FailoverIcmpCheck for failover meta property with protocol=ICMP
+type FailoverIcmpCheck struct {
+	Protocol  string `json:"protocol"` // ICMP
+	Port      uint16 `json:"port"`
+	Frequency uint16 `json:"frequency"`
+	Timeout   uint16 `json:"timeout"`
+}
+
+// NewResourceMetaFailoverFromHttp for failover
+func NewResourceMetaFailoverFromHttp(failover FailoverHttpCheck) ResourceMeta {
+	return ResourceMeta{
+		name:  "failover",
+		value: failover,
+	}
+}
+
+// NewResourceMetaFailoverFromTcpUdp for TCP/DUP failover
+func NewResourceMetaFailoverFromTcpUdp(failover FailoverTcpUdpCheck) ResourceMeta {
+	return ResourceMeta{
+		name:  "failover",
+		value: failover,
+	}
+}
+
+// NewResourceMetaFailoverFromIcmp for ICMP failover
+func NewResourceMetaFailoverFromIcmp(failover FailoverIcmpCheck) ResourceMeta {
+	return ResourceMeta{
+		name:  "failover",
+		value: failover,
 	}
 }
 
