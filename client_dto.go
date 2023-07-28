@@ -576,6 +576,22 @@ func NewResourceMetaDefault() ResourceMeta {
 	}
 }
 
+// NewResourceMetaBackup for backup meta
+func NewResourceMetaBackup() ResourceMeta {
+	return ResourceMeta{
+		name:  "backup",
+		value: true,
+	}
+}
+
+// NewResourceMetaFallback for fallback meta
+func NewResourceMetaFallback() ResourceMeta {
+	return ResourceMeta{
+		name:  "fallback",
+		value: true,
+	}
+}
+
 // SetContent to ResourceRecord
 func (r *ResourceRecord) SetContent(recordType, val string) *ResourceRecord {
 	r.Content = ContentFromValue(recordType, val)
