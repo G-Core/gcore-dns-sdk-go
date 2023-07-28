@@ -592,6 +592,14 @@ func NewResourceMetaFallback() ResourceMeta {
 	}
 }
 
+// NewResourceMetaWeight for fallback meta
+func NewResourceMetaWeight(weight int) ResourceMeta {
+	return ResourceMeta{
+		name:  "weight",
+		value: weight,
+	}
+}
+
 // SetContent to ResourceRecord
 func (r *ResourceRecord) SetContent(recordType, val string) *ResourceRecord {
 	r.Content = ContentFromValue(recordType, val)
