@@ -493,10 +493,10 @@ func (rm ResourceMeta) Valid() error {
 // NewResourceMetaIP for ip meta
 func NewResourceMetaIP(ips ...string) ResourceMeta {
 	for _, v := range ips {
-		ip := net.ParseIP(v)
-		if ip == nil {
+		_, _, err := net.ParseCIDR(v)
+		if err != nil {
 			// nolint: goerr113
-			return ResourceMeta{validErr: fmt.Errorf("wrong ip")}
+			return ResourceMeta{validErr: fmt.Errorf("wrong ip: %v", err)}
 		}
 	}
 	return ResourceMeta{
