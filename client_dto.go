@@ -151,6 +151,23 @@ func (r *RRSet) SetMetaFailover(failover map[string]any) *RRSet {
 	return r
 }
 
+// NewRRSetMetaGeodnsLink
+
+func NewRRSetMetaGeodnsLink(link string) *RRSetMeta {
+	return &RRSetMeta{
+		"geodns_link": link,
+	}
+}
+
+// SetMetaGeodnsLink
+func (r *RRSet) SetMetaGeodnsLink(link string) *RRSet {
+	if r.Meta == nil {
+		r.Meta = RRSetMeta{}
+	}
+	r.Meta["geodns_link"] = link
+	return r
+}
+
 // FailoverHttpCheck for failover meta property with protocol=HTTP
 type FailoverHttpCheck struct {
 	Protocol  string `json:"protocol"` // HTTP
