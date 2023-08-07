@@ -495,8 +495,10 @@ func NewResourceMetaIP(ips ...string) ResourceMeta {
 	for _, v := range ips {
 		_, _, err := net.ParseCIDR(v)
 		if err != nil {
-			// nolint: goerr113
-			return ResourceMeta{validErr: fmt.Errorf("wrong ip: %v", err)}
+			if ip := net.ParseIP(v); ip == nil {
+				// nolint: goerr113
+				return ResourceMeta{validErr: fmt.Errorf("wrong ip: %v", err)}
+			}
 		}
 	}
 	return ResourceMeta{
@@ -573,6 +575,30 @@ func NewResourceMetaDefault() ResourceMeta {
 	return ResourceMeta{
 		name:  "default",
 		value: true,
+	}
+}
+
+// NewResourceMetaBackup for backup meta
+func NewResourceMetaBackup() ResourceMeta {
+	return ResourceMeta{
+		name:  "backup",
+		value: true,
+	}
+}
+
+// NewResourceMetaFallback for fallback meta
+func NewResourceMetaFallback() ResourceMeta {
+	return ResourceMeta{
+		name:  "fallback",
+		value: true,
+	}
+}
+
+// NewResourceMetaWeight for fallback meta
+func NewResourceMetaWeight(weight int) ResourceMeta {
+	return ResourceMeta{
+		name:  "weight",
+		value: weight,
 	}
 }
 
