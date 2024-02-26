@@ -91,7 +91,7 @@ func (c *Client) CreateZone(ctx context.Context, name string) (uint64, error) {
 	return res.ID, nil
 }
 
-// Zones gets all zones.
+// Zones gets first 100 zones.
 // https://apidocs.gcore.com/dns#tag/zones/operation/Zones
 func (c *Client) Zones(ctx context.Context, filters ...func(zone *ZonesFilter)) ([]Zone, error) {
 	res := ListZones{}
@@ -267,6 +267,7 @@ func (c *Client) ZonesWithParam(ctx context.Context, param ZonesParam) (res List
 	return res, nil
 }
 
+// AllZones get all zones per 1k
 func (c *Client) AllZones(ctx context.Context) ([]Zone, error) {
 	offset := 0
 	const limit = 1000
