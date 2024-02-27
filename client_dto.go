@@ -10,7 +10,9 @@ import (
 
 // ListZones dto to read list of zones from API
 type ListZones struct {
-	Zones []Zone `json:"zones"`
+	Zones       []Zone `json:"zones"`
+	TotalAmount int    `json:"total_amount"`
+	Error       string `json:"error,omitempty"`
 }
 
 // Zone dto to read info from API
