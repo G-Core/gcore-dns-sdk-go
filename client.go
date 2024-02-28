@@ -294,9 +294,36 @@ func (c *Client) AllZones(ctx context.Context) ([]Zone, error) {
 	return zones, nil
 }
 
-// ZonesWithRecords gets all zones with records information.
+// ZonesWithRecords gets first 100 zones with records information.
 func (c *Client) ZonesWithRecords(ctx context.Context, filters ...func(zone *ZonesFilter)) ([]Zone, error) {
 	zones, err := c.Zones(ctx, filters...)
+	if err != nil {
+		return nil, fmt.Errorf("all zones: %w", err)
+	}
+	gr, _ := errgroup.WithContext(ctx)
+	for i, z := range zones {
+		z := z
+		i := i
+		gr.Go(func() error {
+			zone, errGet := c.Zone(ctx, z.Name)
+			if errGet != nil {
+				return fmt.Errorf("%s: %w", z.Name, errGet)
+			}
+			zones[i] = zone
+			return nil
+		})
+	}
+	err = gr.Wait()
+	if err != nil {
+		return nil, fmt.Errorf("zone info: %w", err)
+	}
+
+	return zones, nil
+}
+
+// AllZonesWithRecords gets all zones with records information.
+func (c *Client) AllZonesWithRecords(ctx context.Context) ([]Zone, error) {
+	zones, err := c.AllZones(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("all zones: %w", err)
 	}
