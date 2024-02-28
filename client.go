@@ -268,7 +268,7 @@ func (c *Client) ZonesWithParam(ctx context.Context, param ZonesParam) (res List
 }
 
 // AllZones get all zones per 1k
-func (c *Client) AllZones(ctx context.Context) ([]Zone, error) {
+func (c *Client) AllZones(ctx context.Context, nameFilters []string) ([]Zone, error) {
 	offset := 0
 	const limit = 1000
 	var zones []Zone
@@ -276,6 +276,7 @@ func (c *Client) AllZones(ctx context.Context) ([]Zone, error) {
 		param := ZonesParam{
 			Offset: uint64(offset),
 			Limit:  uint64(limit),
+			Name:   nameFilters,
 		}
 		zoneRes, err := c.ZonesWithParam(ctx, param)
 		if err != nil {
@@ -322,8 +323,8 @@ func (c *Client) ZonesWithRecords(ctx context.Context, filters ...func(zone *Zon
 }
 
 // AllZonesWithRecords gets all zones with records information.
-func (c *Client) AllZonesWithRecords(ctx context.Context) ([]Zone, error) {
-	zones, err := c.AllZones(ctx)
+func (c *Client) AllZonesWithRecords(ctx context.Context, nameFilters []string) ([]Zone, error) {
+	zones, err := c.AllZones(ctx, nameFilters)
 	if err != nil {
 		return nil, fmt.Errorf("all zones: %w", err)
 	}
