@@ -536,6 +536,34 @@ func (c *Client) UpdateRRSet(ctx context.Context, zone, name, recordType string,
 	return c.do(ctx, http.MethodPut, uri, record, nil)
 }
 
+// DnssecDS https://api.gcore.com/docs/dns#tag/DNSSEC/operation/GetDNSSECDS
+func (c *Client) DnssecDS(ctx context.Context, zone string) (DnssecDS, error) {
+	zone = strings.Trim(zone, ".")
+	uri := path.Join("/v2/zones", zone, "dnssec")
+
+	var ds DnssecDS
+	err := c.do(ctx, http.MethodGet, uri, nil, &ds)
+	if err != nil {
+		return DnssecDS{}, fmt.Errorf("get dnssec: %w", err)
+	}
+
+	return ds, nil
+}
+
+// ToggleDnssec https://api.gcore.com/docs/dns#tag/DNSSEC/operation/ToggleDNSSEC
+func (c *Client) ToggleDnssec(ctx context.Context, zone string, enable bool) (DnssecDS, error) {
+	zone = strings.Trim(zone, ".")
+	uri := path.Join("/v2/zones", zone, "dnssec")
+
+	var ds DnssecDS
+	err := c.do(ctx, http.MethodPatch, uri, map[string]bool{"enabled": enable}, &ds)
+	if err != nil {
+		return DnssecDS{}, fmt.Errorf("toggle dnssec: %w", err)
+	}
+
+	return ds, nil
+}
+
 func (c *Client) do(ctx context.Context, method, uri string, bodyParams interface{}, dest interface{}) error {
 	var bs []byte
 	if bodyParams != nil {
