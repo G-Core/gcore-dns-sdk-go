@@ -282,17 +282,17 @@ func TestClientE2E_ZoneWithDNSSEC(t *testing.T) {
 	err = sdk.AddZoneRRSet(ctx, zoneName, "www."+zoneName, "HTTPS", []ResourceRecord{rr},
 		defaultTTL, defaultFilterOpts())
 
-	ds, err := sdk.DnssecDS(ctx, zoneName)
+	dnsSecDS, err := sdk.DNSSecDS(ctx, zoneName)
 	require.EqualError(t, err, "get dnssec: 400: dnssec is disabled")
-	assert.Empty(t, ds)
+	assert.Empty(t, dnsSecDS)
 
-	ds, err = sdk.ToggleDnssec(ctx, zoneName, true)
+	dnsSecDS, err = sdk.ToggleDnssec(ctx, zoneName, true)
 	require.NoError(t, err, "add zone dnssec")
-	assert.NotEmpty(t, ds)
+	assert.NotEmpty(t, dnsSecDS)
 
-	ds, err = sdk.DnssecDS(ctx, zoneName)
+	dnsSecDS, err = sdk.DNSSecDS(ctx, zoneName)
 	require.NoError(t, err)
-	assert.NotEmpty(t, ds)
+	assert.NotEmpty(t, dnsSecDS)
 
 	// It is not possible to test the DNSSEC disabling because it may take some time to be disabled.
 }

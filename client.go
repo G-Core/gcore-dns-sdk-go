@@ -536,32 +536,32 @@ func (c *Client) UpdateRRSet(ctx context.Context, zone, name, recordType string,
 	return c.do(ctx, http.MethodPut, uri, record, nil)
 }
 
-// DnssecDS https://api.gcore.com/docs/dns#tag/DNSSEC/operation/GetDNSSECDS
-func (c *Client) DnssecDS(ctx context.Context, zone string) (DnssecDS, error) {
+// DNSSecDS https://api.gcore.com/docs/dns#tag/DNSSEC/operation/GetDNSSECDS
+func (c *Client) DNSSecDS(ctx context.Context, zone string) (DNSSecDS, error) {
 	zone = strings.Trim(zone, ".")
 	uri := path.Join("/v2/zones", zone, "dnssec")
 
-	var ds DnssecDS
-	err := c.do(ctx, http.MethodGet, uri, nil, &ds)
+	var dnsSecDS DNSSecDS
+	err := c.do(ctx, http.MethodGet, uri, nil, &dnsSecDS)
 	if err != nil {
-		return DnssecDS{}, fmt.Errorf("get dnssec: %w", err)
+		return DNSSecDS{}, fmt.Errorf("get dnssec: %w", err)
 	}
 
-	return ds, nil
+	return dnsSecDS, nil
 }
 
 // ToggleDnssec https://api.gcore.com/docs/dns#tag/DNSSEC/operation/ToggleDNSSEC
-func (c *Client) ToggleDnssec(ctx context.Context, zone string, enable bool) (DnssecDS, error) {
+func (c *Client) ToggleDnssec(ctx context.Context, zone string, enable bool) (DNSSecDS, error) {
 	zone = strings.Trim(zone, ".")
 	uri := path.Join("/v2/zones", zone, "dnssec")
 
-	var ds DnssecDS
-	err := c.do(ctx, http.MethodPatch, uri, map[string]bool{"enabled": enable}, &ds)
+	var dnssecDS DNSSecDS
+	err := c.do(ctx, http.MethodPatch, uri, map[string]bool{"enabled": enable}, &dnssecDS)
 	if err != nil {
-		return DnssecDS{}, fmt.Errorf("toggle dnssec: %w", err)
+		return DNSSecDS{}, fmt.Errorf("toggle dnssec: %w", err)
 	}
 
-	return ds, nil
+	return dnssecDS, nil
 }
 
 func (c *Client) do(ctx context.Context, method, uri string, bodyParams interface{}, dest interface{}) error {

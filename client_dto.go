@@ -659,7 +659,8 @@ type ZoneRecord struct {
 	ShortAnswers []string `json:"short_answers"`
 }
 
-type DnssecDS struct {
+// DNSSecDS dto describe DS records that returned from API on DNSSec requests
+type DNSSecDS struct {
 	Algorithm       string `json:"algorithm"`
 	Digest          string `json:"digest"`
 	DigestAlgorithm string `json:"digest_algorithm"`
