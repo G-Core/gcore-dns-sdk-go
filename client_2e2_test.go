@@ -15,9 +15,13 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// defaultTTL - users who are on the FREE plan have the limitation of setting the time-to-live (ttl)
+// to a minimum of three minutes.
+const defaultTTL = 120
+
 var defaultNS = []string{"ns1.gcorelabs.net", "ns2.gcdn.services"}
 
-func TestNewClient(t *testing.T) {
+func TestE2E_ZonesWithRRSets(t *testing.T) {
 	apiToken := strings.TrimSpace(os.Getenv("TESTS_API_PERMANENT_TOKEN"))
 	if apiToken == "" {
 		t.Skip("no defined TESTS_API_PERMANENT_TOKEN")
@@ -55,8 +59,8 @@ func TestNewClient(t *testing.T) {
 				SetContent(recType, recVal).
 				AddMeta(NewResourceMetaLatLong("3.3,4.4")),
 		},
-		30,
-		WithFilters(NewDefaultFilter(1, true)))
+		defaultTTL,
+		defaultFilterOpts())
 
 	require.NoError(t, err, "add rrSet")
 
@@ -67,8 +71,8 @@ func TestNewClient(t *testing.T) {
 		[]ResourceRecord{
 			*(&ResourceRecord{}).SetContent(recTypeSecond, recValSecond),
 		},
-		30,
-		WithFilters(NewDefaultFilter(1, true)))
+		defaultTTL,
+		defaultFilterOpts())
 
 	require.NoError(t, err, "add rrSet")
 
@@ -78,7 +82,7 @@ func TestNewClient(t *testing.T) {
 		recName,
 		recType,
 		RRSet{
-			TTL: 60,
+			TTL: 180,
 			Records: []ResourceRecord{
 				*(&ResourceRecord{Enabled: true}).
 					SetContent(recType, recVal).
@@ -106,7 +110,7 @@ func TestNewClient(t *testing.T) {
 			{
 				Name:         recName,
 				Type:         recType,
-				TTL:          60,
+				TTL:          180,
 				ShortAnswers: []string{recVal, recVal2},
 			},
 		},
@@ -143,7 +147,7 @@ func TestNewClient(t *testing.T) {
 	require.NoError(t, err, "read rrSet")
 
 	wantRrSet := RRSet{
-		TTL: 60,
+		TTL: 180,
 		Records: []ResourceRecord{
 			{
 				Content: []interface{}{recVal},
@@ -175,7 +179,7 @@ func TestNewClient(t *testing.T) {
 	require.NoError(t, err, "delete zone")
 }
 
-func TestClient_ZoneNameserversE2E(t *testing.T) {
+func TestClientE2E_ZoneNameservers(t *testing.T) {
 	apiToken := strings.TrimSpace(os.Getenv("TESTS_API_PERMANENT_TOKEN"))
 	if apiToken == "" {
 		t.Skip("no defined TESTS_API_PERMANENT_TOKEN")
@@ -207,9 +211,6 @@ func TestClient_ZoneNameserversE2E(t *testing.T) {
 
 	group, ctxGroup := errgroup.WithContext(ctx)
 
-	defaultTTL := 30
-	withDefaultFilters := WithFilters(NewDefaultFilter(1, true))
-
 	for _, z := range expZones {
 		zone := z
 		group.Go(func() error {
@@ -217,7 +218,7 @@ func TestClient_ZoneNameserversE2E(t *testing.T) {
 			rr.SetContent(nsRecordType, zone)
 
 			return sdk.AddZoneRRSet(ctxGroup, zoneName, randStr()+"."+zoneName, nsRecordType, []ResourceRecord{rr},
-				defaultTTL, withDefaultFilters)
+				defaultTTL, defaultFilterOpts())
 		})
 	}
 
@@ -227,7 +228,7 @@ func TestClient_ZoneNameserversE2E(t *testing.T) {
 		rr.AddMeta(NewResourceMetaLatLong("3.3,4.4"))
 
 		return sdk.AddZoneRRSet(ctxGroup, zoneName, "www."+zoneName, "TXT", []ResourceRecord{rr},
-			defaultTTL, withDefaultFilters)
+			defaultTTL, defaultFilterOpts())
 	})
 
 	group.Go(func() error {
@@ -235,15 +236,7 @@ func TestClient_ZoneNameserversE2E(t *testing.T) {
 		rr.SetContent("MX", "10 my.mail.server.com")
 
 		return sdk.AddZoneRRSet(ctxGroup, zoneName, "www."+zoneName, "MX", []ResourceRecord{rr},
-			defaultTTL, withDefaultFilters)
-	})
-
-	group.Go(func() error {
-		rr := ResourceRecord{}
-		rr.SetContent("HTTPS", "1 . ip4hint=1.2.3.4,5.6.7.8")
-
-		return sdk.AddZoneRRSet(ctxGroup, zoneName, "www."+zoneName, "HTTPS", []ResourceRecord{rr},
-			defaultTTL, withDefaultFilters)
+			defaultTTL, defaultFilterOpts())
 	})
 
 	err = group.Wait()
@@ -256,6 +249,56 @@ func TestClient_ZoneNameserversE2E(t *testing.T) {
 
 	expNS := append(expZones, defaultNS...)
 	assert.ElementsMatch(t, ns, expNS)
+}
+
+func TestClientE2E_ZoneWithDNSSEC(t *testing.T) {
+	apiToken := strings.TrimSpace(os.Getenv("TESTS_API_PERMANENT_TOKEN"))
+	if apiToken == "" {
+		t.Skip("no defined TESTS_API_PERMANENT_TOKEN")
+	}
+
+	sdk := NewClient(PermanentAPIKeyAuth(apiToken), func(client *Client) {
+		client.Debug = true
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
+
+	zoneName := fmt.Sprintf("dnssec.testzone.%s.sdk.com", randStr())
+	_, err := sdk.CreateZone(ctx, zoneName)
+	require.NoError(t, err, "create zone")
+
+	defer func() {
+		err = sdk.DeleteZone(ctx, zoneName)
+		require.NoError(t, err, "cleanup zone")
+	}()
+
+	_, err = sdk.Zone(ctx, zoneName)
+	require.NoError(t, err, "read zone")
+
+	rr := ResourceRecord{}
+	rr.SetContent("HTTPS", "1 . ipv4hint=1.2.3.4,5.6.7.8")
+
+	err = sdk.AddZoneRRSet(ctx, zoneName, "www."+zoneName, "HTTPS", []ResourceRecord{rr},
+		defaultTTL, defaultFilterOpts())
+
+	dnsSecDS, err := sdk.DNSSecDS(ctx, zoneName)
+	require.EqualError(t, err, "get dnssec: 400: dnssec is disabled")
+	assert.Empty(t, dnsSecDS)
+
+	dnsSecDS, err = sdk.ToggleDnssec(ctx, zoneName, true)
+	require.NoError(t, err, "add zone dnssec")
+	assert.NotEmpty(t, dnsSecDS)
+
+	dnsSecDS, err = sdk.DNSSecDS(ctx, zoneName)
+	require.NoError(t, err)
+	assert.NotEmpty(t, dnsSecDS)
+
+	// It is not possible to test the DNSSEC disabling because it may take some time to be disabled.
+}
+
+func defaultFilterOpts() AddZoneOpt {
+	return WithFilters(NewDefaultFilter(1, true))
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
