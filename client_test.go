@@ -166,7 +166,7 @@ func TestClient_RRSet(t *testing.T) {
 		next:   handleJSONResponse(expected),
 	})
 
-	rrSet, err := client.RRSet(context.Background(), "example.com", "foo.example.com", txtRecordType)
+	rrSet, err := client.RRSet(context.Background(), "example.com", "foo.example.com", txtRecordType, 0, 0)
 	require.NoError(t, err)
 
 	assert.Equal(t, expected, rrSet)
@@ -180,7 +180,7 @@ func TestClient_RRSet_error(t *testing.T) {
 		next:   handleAPIError(),
 	})
 
-	_, err := client.RRSet(context.Background(), "example.com", "foo.example.com", txtRecordType)
+	_, err := client.RRSet(context.Background(), "example.com", "foo.example.com", txtRecordType, 0, 0)
 	require.Error(t, err)
 }
 
