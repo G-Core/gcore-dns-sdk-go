@@ -143,7 +143,7 @@ func TestE2E_ZonesWithRRSets(t *testing.T) {
 	err = sdk.DeleteRRSetRecord(ctx, zoneName, recName, recType, recVal2)
 	require.NoError(t, err, "delete rrSet record")
 
-	rrSet, err := sdk.RRSet(ctx, zoneName, recName, recType)
+	rrSet, err := sdk.RRSet(ctx, zoneName, recName, recType, 0, 0)
 	require.NoError(t, err, "read rrSet")
 
 	wantRrSet := RRSet{
