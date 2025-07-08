@@ -683,3 +683,31 @@ type APIError struct {
 func (a APIError) Error() string {
 	return fmt.Sprintf("%d: %s", a.StatusCode, a.Message)
 }
+
+// IPNet represents a network address in CIDR format.
+type IPNet string
+
+// MappingEntry defines a set of CIDRs and their associated tags.
+type MappingEntry struct {
+	CIDR4 []IPNet  `json:"cidr4,omitempty"`
+	CIDR6 []IPNet  `json:"cidr6,omitempty"`
+	Tags  []string `json:"tags,omitempty"`
+}
+
+// NetworkMapping is the core object representing a network mapping.
+type NetworkMapping struct {
+	ID      uint64         `json:"id,omitempty"`
+	Name    string         `json:"name"`
+	Mapping []MappingEntry `json:"mapping"`
+}
+
+// ListNetworkMappingResponse is the response for listing network mappings.
+type ListNetworkMappingResponse struct {
+	NetworkMappings []NetworkMapping `json:"network_mappings"`
+	TotalAmount     int              `json:"total_amount"`
+}
+
+// CreateNetworkMappingResponse is the response for creating a network mapping.
+type CreateNetworkMappingResponse struct {
+	ID uint64 `json:"id"`
+}

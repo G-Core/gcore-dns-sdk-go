@@ -577,6 +577,107 @@ func (c *Client) ToggleDnssec(ctx context.Context, zone string, enable bool) (DN
 	return dnssecDS, nil
 }
 
+type NetworkMappingsParams struct {
+	Offset         uint64
+	Limit          uint64
+	OrderBy        string
+	OrderDirection string
+}
+
+func (p NetworkMappingsParams) query() string {
+	form := url.Values{}
+	if p.Offset > 0 {
+		form.Add("offset", fmt.Sprint(p.Offset))
+	}
+	if p.Limit > 0 {
+		form.Add("limit", fmt.Sprint(p.Limit))
+	}
+	if p.OrderBy != "" {
+		form.Add("order_by", p.OrderBy)
+	}
+	if p.OrderDirection != "" {
+		form.Add("order_direction", p.OrderDirection)
+	}
+	return form.Encode()
+}
+
+// ListNetworkMappings lists network mappings.
+// https://apidocs.gcore.com/dns#tag/NetworkMappings/operation/ListNetworkMapping
+func (c *Client) ListNetworkMappings(ctx context.Context, params NetworkMappingsParams) (*ListNetworkMappingResponse, error) {
+	res := ListNetworkMappingResponse{}
+	uri := "/v2/network-mappings"
+	if q := params.query(); q != "" {
+		uri += "?" + q
+	}
+	err := c.do(ctx, http.MethodGet, uri, nil, &res)
+	if err != nil {
+		return nil, fmt.Errorf("request: %w", err)
+	}
+
+	return &res, nil
+}
+
+// CreateNetworkMapping creates a new network mapping.
+// https://apidocs.gcore.com/dns#tag/NetworkMappings/operation/CreateNetworkMapping
+func (c *Client) CreateNetworkMapping(ctx context.Context, mapping NetworkMapping) (uint64, error) {
+	res := CreateNetworkMappingResponse{}
+	err := c.do(ctx, http.MethodPost, "/v2/network-mappings", mapping, &res)
+	if err != nil {
+		return 0, fmt.Errorf("request: %w", err)
+	}
+	return res.ID, nil
+}
+
+// GetNetworkMapping gets a network mapping by ID.
+// https://apidocs.gcore.com/dns#tag/NetworkMappings/operation/GetNetworkMapping
+func (c *Client) GetNetworkMapping(ctx context.Context, id uint64) (*NetworkMapping, error) {
+	wrappedResp := struct {
+		NetworkMapping NetworkMapping `json:"network_mapping"`
+	}{}
+	uri := path.Join("/v2/network-mappings", fmt.Sprint(id))
+	err := c.do(ctx, http.MethodGet, uri, nil, &wrappedResp)
+	if err != nil {
+		return nil, fmt.Errorf("request: %w", err)
+	}
+	return &wrappedResp.NetworkMapping, nil
+}
+
+// GetNetworkMappingByName gets a network mapping by name.
+// https://apidocs.gcore.com/dns#tag/NetworkMappings/operation/NetworkMappingByName
+func (c *Client) GetNetworkMappingByName(ctx context.Context, name string) (*NetworkMapping, error) {
+	wrappedResp := struct {
+		NetworkMapping NetworkMapping `json:"network_mapping"`
+	}{}
+	uri := path.Join("/v2/network-mappings", name)
+	err := c.do(ctx, http.MethodGet, uri, nil, &wrappedResp)
+	if err != nil {
+		return nil, fmt.Errorf("request: %w", err)
+	}
+	return &wrappedResp.NetworkMapping, nil
+}
+
+// UpdateNetworkMapping updates a network mapping.
+// https://apidocs.gcore.com/dns#tag/NetworkMappings/operation/UpdateNetworkMapping
+func (c *Client) UpdateNetworkMapping(ctx context.Context, id uint64, mapping NetworkMapping) error {
+	uri := path.Join("/v2/network-mappings", fmt.Sprint(id))
+	err := c.do(ctx, http.MethodPut, uri, mapping, nil)
+	if err != nil {
+		return fmt.Errorf("request: %w", err)
+	}
+	return nil
+}
+
+// DeleteNetworkMapping deletes a network mapping by ID.
+// https://apidocs.gcore.com/dns#tag/NetworkMappings/operation/DeleteNetworkMapping
+func (c *Client) DeleteNetworkMapping(ctx context.Context, id uint64) error {
+	uri := path.Join("/v2/network-mappings", fmt.Sprint(id))
+	err := c.do(ctx, http.MethodDelete, uri, nil, nil)
+	if err != nil {
+		return fmt.Errorf("request: %w", err)
+	}
+	return nil
+}
+
 func (c *Client) do(ctx context.Context, method, uri string, bodyParams interface{}, dest interface{}) error {
 	var bs []byte
 	if bodyParams != nil {
