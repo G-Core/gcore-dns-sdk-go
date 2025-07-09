@@ -706,9 +706,6 @@ func (ipn *IPNet) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return fmt.Errorf("invalid CIDR string %q: %w", s, err)
 	}
-	if n == nil {
-		return fmt.Errorf("invalid CIDR string %q", s)
-	}
 	*ipn = IPNet{*n}
 	return nil
 }
