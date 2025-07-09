@@ -591,7 +591,7 @@ func (p NetworkMappingsParams) query() string {
 		form.Add("offset", strconv.FormatUint(p.Offset, 10))
 	}
 	if p.Limit > 0 {
-		form.Add("limit", fmt.Sprint(p.Limit))
+		form.Add("limit", strconv.FormatUint(p.Limit, 10))
 	}
 	if p.OrderBy != "" {
 		form.Add("order_by", p.OrderBy)
