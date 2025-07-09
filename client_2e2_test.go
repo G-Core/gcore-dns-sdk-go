@@ -34,7 +34,7 @@ func TestE2E_ZonesWithRRSets(t *testing.T) {
 	defer cancel()
 
 	zoneName := fmt.Sprintf("testzone.%s.sdk.com", randStr())
-	_, err := sdk.CreateZone(ctx, zoneName)
+	_, err := sdk.CreateZone(ctx, zoneName, AddZone{Name: zoneName})
 	require.NoError(t, err, "create zone")
 
 	// read zone
@@ -193,7 +193,7 @@ func TestClientE2E_ZoneNameservers(t *testing.T) {
 	defer cancel()
 
 	zoneName := fmt.Sprintf("testzone.%s.sdk.com", randStr())
-	_, err := sdk.CreateZone(ctx, zoneName)
+	_, err := sdk.CreateZone(ctx, zoneName, AddZone{Name: zoneName})
 	require.NoError(t, err, "create zone")
 
 	defer func() {
@@ -265,7 +265,7 @@ func TestClientE2E_ZoneWithDNSSEC(t *testing.T) {
 	defer cancel()
 
 	zoneName := fmt.Sprintf("dnssec.testzone.%s.sdk.com", randStr())
-	_, err := sdk.CreateZone(ctx, zoneName)
+	_, err := sdk.CreateZone(ctx, zoneName, AddZone{Name: zoneName})
 	require.NoError(t, err, "create zone")
 
 	defer func() {

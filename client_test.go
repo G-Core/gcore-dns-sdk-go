@@ -74,10 +74,65 @@ func TestClient_CreateZone(t *testing.T) {
 		next:   handleJSONResponse(expected),
 	})
 
-	id, err := client.CreateZone(context.Background(), "example.com")
+	id, err := client.CreateZone(context.Background(), "example.com", AddZone{Name: "example.com"})
 	require.NoError(t, err)
 
 	assert.Equal(t, expected.ID, id)
+}
+
+func TestClient_EnableZone(t *testing.T) {
+	mux, client := setupTest(t)
+
+	mux.Handle("/v2/zones/example.com/enable", validationHandler{
+		method: http.MethodPatch,
+	})
+
+	err := client.EnableZone(context.Background(), "example.com")
+	require.NoError(t, err)
+}
+
+func TestClient_DisableZone(t *testing.T) {
+	mux, client := setupTest(t)
+
+	mux.Handle("/v2/zones/example.com/disable", validationHandler{
+		method: http.MethodPatch,
+	})
+
+	err := client.DisableZone(context.Background(), "example.com")
+	require.NoError(t, err)
+}
+
+func TestClient_ImportZone(t *testing.T) {
+	mux, client := setupTest(t)
+
+	expected := ImportZoneResponse{
+		Success: true,
+	}
+
+	importContent := "some bind file content"
+
+	mux.Handle("/v2/zones/example.com/import", validationHandler{
+		method: http.MethodPost,
+		next: http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			body := ImportZone{}
+			err := json.NewDecoder(req.Body).Decode(&body)
+			if err != nil {
+				http.Error(rw, "failed to decode body", http.StatusBadRequest)
+				return
+			}
+			if body.Content != importContent {
+				http.Error(rw, "unexpected content", http.StatusBadRequest)
+				return
+			}
+
+			handleJSONResponse(expected)(rw, req)
+		}),
+	})
+
+	resp, err := client.ImportZone(context.Background(), "example.com", importContent)
+	require.NoError(t, err)
+
+	assert.Equal(t, expected, resp)
 }
 
 func TestClient_Zones(t *testing.T) {
