@@ -648,7 +648,8 @@ func (c *Client) GetNetworkMappingByName(ctx context.Context, name string) (*Net
 	wrappedResp := struct {
 		NetworkMapping NetworkMapping `json:"network_mapping"`
 	}{}
-	uri := path.Join("/v2/network-mappings", name)
+	escapedName := url.PathEscape(name)
+	uri := path.Join("/v2/network-mappings", escapedName)
 	err := c.do(ctx, http.MethodGet, uri, nil, &wrappedResp)
 	if err != nil {
 		return nil, fmt.Errorf("request: %w", err)
