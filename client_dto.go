@@ -1,6 +1,7 @@
 package dnssdk
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"net"
@@ -682,4 +683,67 @@ type APIError struct {
 // Error implementation
 func (a APIError) Error() string {
 	return fmt.Sprintf("%d: %s", a.StatusCode, a.Message)
+}
+
+// IPNet represents a validated CIDR network address.
+type IPNet struct {
+	net.IPNet
+}
+
+// MarshalJSON implements the json.Marshaler interface to convert IPNet to a string.
+func (ipn IPNet) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ipn.String())
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface to convert a string to IPNet.
+func (ipn *IPNet) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+
+	_, n, err := net.ParseCIDR(s)
+	if err != nil {
+		return fmt.Errorf("invalid CIDR string %q: %w", s, err)
+	}
+	*ipn = IPNet{*n}
+	return nil
+}
+
+// String returns the string representation of the IPNet.
+func (ipn IPNet) String() string {
+	if ipn.IP == nil {
+		return ""
+	}
+	return ipn.IPNet.String()
+}
+
+// MappingEntry defines a set of CIDRs and their associated tags.
+type MappingEntry struct {
+	CIDR4 []IPNet  `json:"cidr4,omitempty"`
+	CIDR6 []IPNet  `json:"cidr6,omitempty"`
+	Tags  []string `json:"tags,omitempty"`
+}
+
+// NetworkMapping is the core object representing a network mapping.
+type NetworkMappingRequest struct {
+	Name    string         `json:"name"`
+	Mapping []MappingEntry `json:"mapping"`
+}
+
+type NetworkMappingResponse struct {
+	ID      uint64         `json:"id"`
+	Name    string         `json:"name"`
+	Mapping []MappingEntry `json:"mapping"`
+}
+
+// ListNetworkMappingResponse is the response for listing network mappings.
+type ListNetworkMappingResponse struct {
+	NetworkMappings []NetworkMappingResponse `json:"network_mappings"`
+	TotalAmount     int                      `json:"total_amount"`
+}
+
+// CreateNetworkMappingResponse is the response for creating a network mapping.
+type CreateNetworkMappingResponse struct {
+	ID uint64 `json:"id"`
 }
