@@ -1,6 +1,7 @@
 package dnssdk
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"net"
@@ -684,8 +685,41 @@ func (a APIError) Error() string {
 	return fmt.Sprintf("%d: %s", a.StatusCode, a.Message)
 }
 
-// IPNet represents a network address in CIDR format.
-type IPNet string
+// IPNet represents a validated CIDR network address.
+type IPNet struct {
+	net.IPNet
+}
+
+// MarshalJSON implements the json.Marshaler interface to convert IPNet to a string.
+func (ipn IPNet) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ipn.String())
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface to convert a string to IPNet.
+func (ipn *IPNet) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+
+	_, n, err := net.ParseCIDR(s)
+	if err != nil {
+		return fmt.Errorf("invalid CIDR string %q: %w", s, err)
+	}
+	if n == nil {
+		return fmt.Errorf("invalid CIDR string %q", s)
+	}
+	*ipn = IPNet{*n}
+	return nil
+}
+
+// String returns the string representation of the IPNet.
+func (ipn IPNet) String() string {
+	if ipn.IP == nil {
+		return ""
+	}
+	return ipn.IPNet.String()
+}
 
 // MappingEntry defines a set of CIDRs and their associated tags.
 type MappingEntry struct {
@@ -709,7 +743,7 @@ type NetworkMappingResponse struct {
 // ListNetworkMappingResponse is the response for listing network mappings.
 type ListNetworkMappingResponse struct {
 	NetworkMappings []NetworkMappingResponse `json:"network_mappings"`
-	TotalAmount     int              `json:"total_amount"`
+	TotalAmount     int                      `json:"total_amount"`
 }
 
 // CreateNetworkMappingResponse is the response for creating a network mapping.
