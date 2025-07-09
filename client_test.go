@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -510,4 +511,133 @@ func handleRRSet(expected []ResourceRecord) http.HandlerFunc {
 			http.Error(rw, "wrong resource records", http.StatusInternalServerError)
 		}
 	}
+}
+
+func mustParseCIDR(s string) IPNet {
+	_, n, err := net.ParseCIDR(s)
+	if err != nil {
+		panic(err)
+	}
+	return IPNet{IPNet: *n}
+}
+
+func TestClient_CreateNetworkMapping(t *testing.T) {
+	mux, client := setupTest(t)
+
+	mockMappingRequest := NetworkMappingRequest{
+		Name: "test-mapping",
+		Mapping: []MappingEntry{
+			{
+				Tags:  []string{"tag1"},
+				CIDR4: []IPNet{mustParseCIDR("192.168.1.0/24")},
+			},
+		},
+	}
+
+	mux.HandleFunc("/v2/network-mappings", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		var receivedMapping NetworkMappingRequest
+		err := json.NewDecoder(r.Body).Decode(&receivedMapping)
+		assert.NoError(t, err)
+		assert.Equal(t, mockMappingRequest, receivedMapping)
+		handleJSONResponse(CreateNetworkMappingResponse{ID: 1})(w, r)
+	})
+
+	id, err := client.CreateNetworkMapping(context.Background(), mockMappingRequest)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(1), id)
+}
+
+func TestClient_GetNetworkMapping(t *testing.T) {
+	mux, client := setupTest(t)
+
+	mockMappingResponse := NetworkMappingResponse{
+		ID:   1,
+		Name: "test-mapping",
+		Mapping: []MappingEntry{
+			{
+				Tags:  []string{"tag1"},
+				CIDR4: []IPNet{mustParseCIDR("192.168.1.0/24")},
+			},
+		},
+	}
+
+	mux.HandleFunc("/v2/network-mappings/1", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		wrappedResp := struct {
+			NetworkMapping NetworkMappingResponse `json:"network_mapping"`
+		}{NetworkMapping: mockMappingResponse}
+		handleJSONResponse(wrappedResp)(w, r)
+	})
+
+	mapping, err := client.GetNetworkMapping(context.Background(), 1)
+	require.NoError(t, err)
+	assert.Equal(t, &mockMappingResponse, mapping)
+}
+
+func TestClient_UpdateNetworkMapping(t *testing.T) {
+	mux, client := setupTest(t)
+
+	mockMappingRequest := NetworkMappingRequest{
+		Name: "test-mapping",
+		Mapping: []MappingEntry{
+			{
+				Tags:  []string{"tag1"},
+				CIDR4: []IPNet{mustParseCIDR("192.168.1.0/24")},
+			},
+		},
+	}
+
+	mux.HandleFunc("/v2/network-mappings/1", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			var receivedMapping NetworkMappingRequest
+			err := json.NewDecoder(r.Body).Decode(&receivedMapping)
+			assert.NoError(t, err)
+			assert.Equal(t, mockMappingRequest, receivedMapping)
+			w.WriteHeader(http.StatusOK)
+		}
+	})
+
+	err := client.UpdateNetworkMapping(context.Background(), 1, mockMappingRequest)
+	require.NoError(t, err)
+}
+
+func TestClient_ListNetworkMappings(t *testing.T) {
+	mux, client := setupTest(t)
+
+	mockMappingResponse := NetworkMappingResponse{
+		ID:   1,
+		Name: "test-mapping",
+		Mapping: []MappingEntry{
+			{
+				Tags:  []string{"tag1"},
+				CIDR4: []IPNet{mustParseCIDR("192.168.1.0/24")},
+			},
+		},
+	}
+
+	mux.HandleFunc("/v2/network-mappings", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		resp := ListNetworkMappingResponse{
+			NetworkMappings: []NetworkMappingResponse{mockMappingResponse},
+		}
+		handleJSONResponse(resp)(w, r)
+	})
+
+	list, err := client.ListNetworkMappings(context.Background(), NetworkMappingsParams{})
+	require.NoError(t, err)
+	assert.Len(t, list.NetworkMappings, 1)
+	assert.Equal(t, mockMappingResponse, list.NetworkMappings[0])
+}
+
+func TestClient_DeleteNetworkMapping(t *testing.T) {
+	mux, client := setupTest(t)
+
+	mux.HandleFunc("/v2/network-mappings/1", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	err := client.DeleteNetworkMapping(context.Background(), 1)
+	require.NoError(t, err)
 }

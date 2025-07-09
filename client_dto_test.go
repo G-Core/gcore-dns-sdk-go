@@ -791,3 +791,68 @@ func TestHttpsSvcbParams(t *testing.T) {
 	str := r.ContentToString()
 	assert.Equal(t, `alpn="h3,h2" no-default-alpn ipv4hint=127.0.0.1,10.0.0.1 port=1234`, str)
 }
+
+func TestIPNet_MarshalUnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name      string
+		cidr      string
+		expectErr bool
+	}{
+		{
+			name:      "valid IPv4 CIDR",
+			cidr:      "192.168.1.0/24",
+			expectErr: false,
+		},
+		{
+			name:      "valid IPv6 CIDR",
+			cidr:      "2001:db8::/32",
+			expectErr: false,
+		},
+		{
+			name:      "invalid CIDR",
+			cidr:      "not-a-cidr",
+			expectErr: true,
+		},
+		{
+			name:      "empty string",
+			cidr:      "",
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test Unmarshal
+			jsonInput := []byte(fmt.Sprintf(`"%s"`, tt.cidr))
+			var ipn IPNet
+			err := ipn.UnmarshalJSON(jsonInput)
+
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.cidr, ipn.String())
+
+				// Test Marshal
+				marshaled, err := ipn.MarshalJSON()
+				assert.NoError(t, err)
+				assert.Equal(t, jsonInput, marshaled)
+			}
+		})
+	}
+
+	// Test unmarshaling invalid JSON
+	t.Run("invalid json", func(t *testing.T) {
+		var ipn IPNet
+		err := ipn.UnmarshalJSON([]byte(`not-json`))
+		assert.Error(t, err)
+	})
+
+	// Test marshaling zero value
+	t.Run("marshal zero value", func(t *testing.T) {
+		var ipn IPNet
+		marshaled, err := ipn.MarshalJSON()
+		assert.NoError(t, err)
+		assert.Equal(t, []byte(`""`), marshaled)
+	})
+}
