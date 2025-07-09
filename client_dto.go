@@ -695,15 +695,20 @@ type MappingEntry struct {
 }
 
 // NetworkMapping is the core object representing a network mapping.
-type NetworkMapping struct {
-	ID      uint64         `json:"id,omitempty"`
+type NetworkMappingRequest struct {
+	Name    string         `json:"name"`
+	Mapping []MappingEntry `json:"mapping"`
+}
+
+type NetworkMappingResponse struct {
+	ID      uint64         `json:"id"`
 	Name    string         `json:"name"`
 	Mapping []MappingEntry `json:"mapping"`
 }
 
 // ListNetworkMappingResponse is the response for listing network mappings.
 type ListNetworkMappingResponse struct {
-	NetworkMappings []NetworkMapping `json:"network_mappings"`
+	NetworkMappings []NetworkMappingResponse `json:"network_mappings"`
 	TotalAmount     int              `json:"total_amount"`
 }
 

@@ -619,7 +619,7 @@ func (c *Client) ListNetworkMappings(ctx context.Context, params NetworkMappings
 
 // CreateNetworkMapping creates a new network mapping.
 // https://apidocs.gcore.com/dns#tag/NetworkMappings/operation/CreateNetworkMapping
-func (c *Client) CreateNetworkMapping(ctx context.Context, mapping NetworkMapping) (uint64, error) {
+func (c *Client) CreateNetworkMapping(ctx context.Context, mapping NetworkMappingRequest) (uint64, error) {
 	res := CreateNetworkMappingResponse{}
 	err := c.do(ctx, http.MethodPost, "/v2/network-mappings", mapping, &res)
 	if err != nil {
@@ -630,9 +630,9 @@ func (c *Client) CreateNetworkMapping(ctx context.Context, mapping NetworkMappin
 
 // GetNetworkMapping gets a network mapping by ID.
 // https://apidocs.gcore.com/dns#tag/NetworkMappings/operation/GetNetworkMapping
-func (c *Client) GetNetworkMapping(ctx context.Context, id uint64) (*NetworkMapping, error) {
+func (c *Client) GetNetworkMapping(ctx context.Context, id uint64) (*NetworkMappingResponse, error) {
 	wrappedResp := struct {
-		NetworkMapping NetworkMapping `json:"network_mapping"`
+		NetworkMapping NetworkMappingResponse `json:"network_mapping"`
 	}{}
 	uri := path.Join("/v2/network-mappings", fmt.Sprint(id))
 	err := c.do(ctx, http.MethodGet, uri, nil, &wrappedResp)
@@ -644,9 +644,9 @@ func (c *Client) GetNetworkMapping(ctx context.Context, id uint64) (*NetworkMapp
 
 // GetNetworkMappingByName gets a network mapping by name.
 // https://apidocs.gcore.com/dns#tag/NetworkMappings/operation/NetworkMappingByName
-func (c *Client) GetNetworkMappingByName(ctx context.Context, name string) (*NetworkMapping, error) {
+func (c *Client) GetNetworkMappingByName(ctx context.Context, name string) (*NetworkMappingResponse, error) {
 	wrappedResp := struct {
-		NetworkMapping NetworkMapping `json:"network_mapping"`
+		NetworkMapping NetworkMappingResponse `json:"network_mapping"`
 	}{}
 	escapedName := url.PathEscape(name)
 	uri := path.Join("/v2/network-mappings", escapedName)
@@ -659,7 +659,7 @@ func (c *Client) GetNetworkMappingByName(ctx context.Context, name string) (*Net
 
 // UpdateNetworkMapping updates a network mapping.
 // https://apidocs.gcore.com/dns#tag/NetworkMappings/operation/UpdateNetworkMapping
-func (c *Client) UpdateNetworkMapping(ctx context.Context, id uint64, mapping NetworkMapping) error {
+func (c *Client) UpdateNetworkMapping(ctx context.Context, id uint64, mapping NetworkMappingRequest) error {
 	uri := path.Join("/v2/network-mappings", fmt.Sprint(id))
 	err := c.do(ctx, http.MethodPut, uri, mapping, nil)
 	if err != nil {
