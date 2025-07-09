@@ -587,7 +587,7 @@ type NetworkMappingsParams struct {
 func (p NetworkMappingsParams) query() string {
 	form := url.Values{}
 	if p.Offset > 0 {
-		form.Add("offset", fmt.Sprint(p.Offset))
+		form.Add("offset", strconv.FormatUint(p.Offset, 10))
 	}
 	if p.Limit > 0 {
 		form.Add("limit", fmt.Sprint(p.Limit))
