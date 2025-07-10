@@ -74,7 +74,7 @@ func TestClient_CreateZone(t *testing.T) {
 		next:   handleJSONResponse(expected),
 	})
 
-	id, err := client.CreateZone(context.Background(), "example.com", AddZone{Name: "example.com"})
+	id, err := client.CreateZone(context.Background(), AddZone{Name: "example.com"})
 	require.NoError(t, err)
 
 	assert.Equal(t, expected.ID, id)

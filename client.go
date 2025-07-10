@@ -77,7 +77,7 @@ func NewClient(authorizer func() authHeader, opts ...func(*Client)) *Client {
 
 // CreateZone adds new zone.
 // https://apidocs.gcore.com/dns#tag/zones/operation/CreateZone
-func (c *Client) CreateZone(ctx context.Context, name string, addZone AddZone) (uint64, error) {
+func (c *Client) CreateZone(ctx context.Context, addZone AddZone) (uint64, error) {
 	res := CreateResponse{}
 	params := addZone
 	err := c.do(ctx, http.MethodPost, "/v2/zones", params, &res)
