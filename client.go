@@ -78,15 +78,26 @@ func NewClient(authorizer func() authHeader, opts ...func(*Client)) *Client {
 
 // CreateZone adds new zone.
 // https://apidocs.gcore.com/dns#tag/zones/operation/CreateZone
-func (c *Client) CreateZone(ctx context.Context, name string) (uint64, error) {
+func (c *Client) CreateZone(ctx context.Context, addZone AddZone) (uint64, error) {
 	res := CreateResponse{}
-	params := AddZone{Name: name}
+	params := addZone
 	err := c.do(ctx, http.MethodPost, "/v2/zones", params, &res)
 	if err != nil {
 		return 0, fmt.Errorf("request: %w", err)
 	}
 	if res.Error != "" {
 		return 0, APIError{StatusCode: http.StatusOK, Message: res.Error}
+	}
+
+	return res.ID, nil
+}
+
+func (c *Client) UpdateZone(ctx context.Context, name string, updateZone AddZone) (uint64, error) {
+	res := CreateResponse{}
+	params := updateZone
+	err := c.do(ctx, http.MethodPut, "/v2/zones/"+name, params, &res)
+	if err != nil {
+		return 0, fmt.Errorf("request: %w", err)
 	}
 
 	return res.ID, nil
@@ -576,6 +587,51 @@ func (c *Client) ToggleDnssec(ctx context.Context, zone string, enable bool) (DN
 	}
 
 	return dnssecDS, nil
+}
+
+// EnableZone enables a DNS zone.
+// https://apidocs.gcore.com/dns#tag/zones/operation/EnableZone
+func (c *Client) EnableZone(ctx context.Context, name string) error {
+	name = strings.Trim(name, ".")
+	uri := path.Join("/v2/zones", name, "enable")
+
+	err := c.do(ctx, http.MethodPatch, uri, nil, nil)
+	if err != nil {
+		return fmt.Errorf("enable zone %s: %w", name, err)
+	}
+
+	return nil
+}
+
+// DisableZone disables a DNS zone.
+// https://apidocs.gcore.com/dns#tag/zones/operation/DisableZone
+func (c *Client) DisableZone(ctx context.Context, name string) error {
+	name = strings.Trim(name, ".")
+	uri := path.Join("/v2/zones", name, "disable")
+
+	err := c.do(ctx, http.MethodPatch, uri, nil, nil)
+	if err != nil {
+		return fmt.Errorf("disable zone %s: %w", name, err)
+	}
+
+	return nil
+}
+
+// ImportZone imports records into a DNS zone.
+// https://apidocs.gcore.com/dns#tag/zones/operation/ImportZone
+func (c *Client) ImportZone(ctx context.Context, name, content string) (ImportZoneResponse, error) {
+	name = strings.Trim(name, ".")
+	uri := path.Join("/v2/zones", name, "import")
+
+	params := ImportZone{Content: content}
+
+	var response ImportZoneResponse
+	err := c.do(ctx, http.MethodPost, uri, params, &response)
+	if err != nil {
+		return ImportZoneResponse{}, fmt.Errorf("import zone %s: %w", name, err)
+	}
+
+	return response, nil
 }
 
 type NetworkMappingsParams struct {

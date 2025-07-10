@@ -18,13 +18,50 @@ type ListZones struct {
 
 // Zone dto to read info from API
 type Zone struct {
-	Name    string       `json:"name"`
-	Records []ZoneRecord `json:"records"`
+	Name          string                 `json:"name"`
+	ClientID      uint64                 `json:"client_id"`
+	Contact       string                 `json:"contact"`
+	DNSSECEnabled bool                   `json:"dnssec_enabled"`
+	Expiry        uint64                 `json:"expiry"`
+	ID            uint64                 `json:"id,omitempty"`
+	Meta          map[string]interface{} `json:"meta"`
+	NxTTL         uint64                 `json:"nx_ttl"`
+	PrimaryServer string                 `json:"primary_server"`
+	Records       []ZoneRecord           `json:"records"`
+	Refresh       uint64                 `json:"refresh"`
+	Retry         uint64                 `json:"retry"`
+	RRSetsAmount  RRSetsAmount           `json:"rrsets_amount"`
+	Serial        uint64                 `json:"serial"`
+	Status        string                 `json:"status"`
+}
+
+type RRSetsAmount struct {
+	Dynamic Dynamic `json:"dynamic"`
+	Static  int64   `json:"static"`
+	Total   int64   `json:"total"`
+}
+
+type Dynamic struct {
+	Healthcheck int64 `json:"healthcheck"`
+	Total       int64 `json:"total"`
 }
 
 // AddZone dto to create new zone
 type AddZone struct {
-	Name string `json:"name"`
+	Contact       string                 `json:"contact,omitempty"`
+	Enabled       bool                   `json:"enabled,omitempty"`
+	Expiry        uint64                 `json:"expiry,omitempty"`
+	Meta          map[string]interface{} `json:"meta,omitempty"`
+	Name          string                 `json:"name"`
+	NxTTL         uint64                 `json:"nx_ttl,omitempty"`
+	PrimaryServer string                 `json:"primary_server,omitempty"`
+	Refresh       uint64                 `json:"refresh,omitempty"`
+	Retry         uint64                 `json:"retry,omitempty"`
+	Serial        uint64                 `json:"serial,omitempty"`
+}
+
+type ImportZone struct {
+	Content string `json:"content"`
 }
 
 // CreateResponse dto to create new zone
@@ -656,7 +693,7 @@ func (rr *RRSet) AddFilter(filters ...RecordFilter) *RRSet {
 type ZoneRecord struct {
 	Name         string   `json:"name"`
 	Type         string   `json:"type"`
-	TTL          uint     `json:"ttl"`
+	TTL          uint32   `json:"ttl"`
 	ShortAnswers []string `json:"short_answers"`
 }
 
@@ -674,7 +711,7 @@ type DNSSecDS struct {
 	Uuid            string `json:"uuid"`
 }
 
-// APIError customization for API calls
+// APIError represents an error returned by the API
 type APIError struct {
 	StatusCode int    `json:"-"`
 	Message    string `json:"error,omitempty"`
@@ -683,6 +720,21 @@ type APIError struct {
 // Error implementation
 func (a APIError) Error() string {
 	return fmt.Sprintf("%d: %s", a.StatusCode, a.Message)
+}
+
+// ImportZoneResponse represents the response from importing a zone
+type ImportZoneResponse struct {
+	Imported ImportedStats                `json:"imported"`
+	Success  bool                         `json:"success"`
+	Warnings map[string]map[string]string `json:"warnings,omitempty"`
+}
+
+// ImportedStats represents the statistics of imported records
+type ImportedStats struct {
+	QType                  int `json:"qtype"`
+	ResourceRecords        int `json:"resource_records"`
+	RRSets                 int `json:"rrsets"`
+	SkippedResourceRecords int `json:"skipped_resource_records"`
 }
 
 // IPNet represents a validated CIDR network address.
