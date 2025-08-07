@@ -659,6 +659,23 @@ func NewResourceMetaWeight(weight int) ResourceMeta {
 	}
 }
 
+func NewResourceMetaCidrLabels(cidrLabels map[string]int) ResourceMeta {
+	if len(cidrLabels) == 0 {
+		return ResourceMeta{validErr: fmt.Errorf("cidrLabels is empty")}
+	}
+	meta := ResourceMeta{
+		name:  "cidr_labels",
+		value: make(map[string]int, len(cidrLabels)),
+	}
+	for k, v := range cidrLabels {
+		if k == "" || v < 0 {
+			return ResourceMeta{validErr: fmt.Errorf("cidrLabels key or value is empty")}
+		}
+		meta.value.(map[string]int)[k] = v
+	}
+	return meta
+}
+
 // SetContent to ResourceRecord
 func (r *ResourceRecord) SetContent(recordType, val string) *ResourceRecord {
 	r.Content = ContentFromValue(recordType, val)
