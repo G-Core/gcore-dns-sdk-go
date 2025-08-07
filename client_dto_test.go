@@ -736,6 +736,72 @@ func TestNewResourceMetaDefault(t *testing.T) {
 	}
 }
 
+func TestNewResourceMetaCidrLabels(t *testing.T) {
+	type args struct {
+		cidrLabels map[string]int
+	}
+	tests := []struct {
+		name string
+		args args
+		want ResourceMeta
+	}{
+		{
+			name: "ok",
+			args: args{
+				cidrLabels: map[string]int{"label1": 1, "label2": 2},
+			},
+			want: ResourceMeta{
+				name:     "cidr_labels",
+				value:    map[string]int{"label1": 1, "label2": 2},
+				validErr: nil,
+			},
+		},
+		{
+			name: "empty map",
+			args: args{
+				cidrLabels: map[string]int{},
+			},
+			want: ResourceMeta{
+				validErr: fmt.Errorf("cidrLabels is empty"),
+			},
+		},
+		{
+			name: "nil map",
+			args: args{
+				cidrLabels: nil,
+			},
+			want: ResourceMeta{
+				validErr: fmt.Errorf("cidrLabels is empty"),
+			},
+		},
+		{
+			name: "empty key",
+			args: args{
+				cidrLabels: map[string]int{"": 1},
+			},
+			want: ResourceMeta{
+				validErr: fmt.Errorf("cidrLabels key or value is empty"),
+			},
+		},
+		{
+			name: "negative value",
+			args: args{
+				cidrLabels: map[string]int{"label1": -1},
+			},
+			want: ResourceMeta{
+				validErr: fmt.Errorf("cidrLabels key or value is empty"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewResourceMetaCidrLabels(tt.args.cidrLabels); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewResourceMetaCidrLabels() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestResourceRecords_AddMeta(t *testing.T) {
 	type fields struct {
 		Content []any
