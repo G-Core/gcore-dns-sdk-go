@@ -669,7 +669,7 @@ func NewResourceMetaCidrLabels(cidrLabels map[string]int) ResourceMeta {
 	}
 	for k, v := range cidrLabels {
 		if k == "" || v < 0 {
-			return ResourceMeta{validErr: fmt.Errorf("cidrLabels key or value is empty")}
+			return ResourceMeta{validErr: fmt.Errorf("cidrLabels key cannot be empty or value cannot be negative")}
 		}
 		meta.value.(map[string]int)[k] = v
 	}
