@@ -88,7 +88,8 @@ func TestE2E_ZonesWithRRSets(t *testing.T) {
 					SetContent(recType, recVal).
 					AddMeta(NewResourceMetaLatLong("1.1,2.2")).
 					AddMeta(NewResourceMetaDefault()).
-					AddMeta(NewResourceMetaAsn(1)),
+					AddMeta(NewResourceMetaAsn(1)).
+					AddMeta(NewResourceMetaCidrLabels(map[string]int{"test": 1})),
 				*(&ResourceRecord{}).
 					SetContent(recType, recVal2).
 					AddMeta(NewResourceMetaNotes("note")),
@@ -152,9 +153,10 @@ func TestE2E_ZonesWithRRSets(t *testing.T) {
 			{
 				Content: []interface{}{recVal},
 				Meta: map[string]interface{}{
-					"latlong": []interface{}{1.1, 2.2},
-					"default": true,
-					"asn":     []interface{}{1},
+					"latlong":     []interface{}{1.1, 2.2},
+					"default":     true,
+					"asn":         []interface{}{1},
+					"cidr_labels": map[string]interface{}{"test": 1},
 				},
 				Enabled: true,
 			},
@@ -171,6 +173,7 @@ func TestE2E_ZonesWithRRSets(t *testing.T) {
 	assert.Equal(t, gotRecord.Meta["default"], wantRecord.Meta["default"], "meta default")
 	assert.Equal(t, gotRecord.Meta["latlong"], wantRecord.Meta["latlong"], "meta latlong")
 	assert.Equal(t, fmt.Sprint(gotRecord.Meta["asn"]), fmt.Sprint(wantRecord.Meta["asn"]), "meta asn")
+	assert.Equal(t, fmt.Sprint(gotRecord.Meta["cidr_labels"]), fmt.Sprint(wantRecord.Meta["cidr_labels"]), "meta cidr_labels")
 
 	err = sdk.DeleteRRSet(ctx, zoneName, recName, recType)
 	require.NoError(t, err, "delete rrSet")
